@@ -2,7 +2,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import * as Plot from '@observablehq/plot'
 
-const canvas = ref<HTMLCanvasElement | null>(null)
 const plotRef = ref<HTMLDivElement | null>(null)
 
 const f = (x: number) => Math.pow(x, 3) + 3 * x - 3
@@ -20,18 +19,23 @@ class Range {
   get middle() {
     return (this.start + this.end) / 2
   }
+  toString() {
+    return `[${+this.start.toFixed(3)};${+this.end.toFixed(3)}]`
+  }
 }
 
-const _initialRange = ref({ start: -10, end: 10 })
-const initialRange = computed(
-  () =>
-    new Range({
-      start: _initialRange.value.start,
-      end: _initialRange.value.end,
-    }),
+function trimNumber(num: number, maxLen: number) {
+  return +num.toFixed(maxLen)
+}
+
+const initialRange = ref(
+  new Range({
+    start: -10,
+    end: 10,
+  }),
 )
 
-function divisionSearch(range: Range): Range {
+function halfDivisionSearch(range: Range): Range {
   const fMiddle = f(range.middle)
   const left = range.start + range.width / 4
   const right = range.end - range.width / 4
@@ -45,7 +49,7 @@ function divisionSearch(range: Range): Range {
   }
 }
 
-function makeSlicedArea(initialRange: Range, range: Range): [Plot.Area, Plot.Area] {
+function makeSlicedPlotArea(initialRange: Range, range: Range): [Plot.Area, Plot.Area] {
   const leftArea = Plot.areaX(
     [
       { x: range.start, y: f(initialRange.start) },
@@ -75,7 +79,7 @@ function findAnswerRanges(range: Range): Range[] {
   const ranges = [range]
 
   while (ranges.at(-1)!.width > epsilon.value) {
-    ranges.push(divisionSearch(ranges.at(-1)!))
+    ranges.push(halfDivisionSearch(ranges.at(-1)!))
     curSteps++
   }
   return ranges
@@ -83,7 +87,7 @@ function findAnswerRanges(range: Range): Range[] {
 
 const answerRanges = computed(() => findAnswerRanges(initialRange.value))
 const slisedAreas = computed(() =>
-  answerRanges.value.map(r => makeSlicedArea(initialRange.value, r)).flat(),
+  answerRanges.value.map(r => makeSlicedPlotArea(initialRange.value, r)).flat(),
 )
 const answerRange = computed(() => answerRanges.value.at(-1)!)
 const answerDotData = computed(() => ({
@@ -101,13 +105,6 @@ const data = computed(() =>
 )
 
 const epsilon = ref(0.2)
-
-// onMounted(() => {
-//   const gl = canvas.value!.getContext('webgl')!
-//   gl.clearColor(0, 0, 0, 1)
-//   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-// })
 
 onMounted(() => {
   plotRef.value!.appendChild(plot.value)
@@ -149,12 +146,12 @@ watch(plot, (value, old) => {
   <!-- <canvas ref="canvas" width="500" height="500"></canvas> -->
   <main class="container mx-auto my-8 flex gap-4 flex-col">
     <h1 class="text-2xl font-bold">Методы оптимизации</h1>
-    <section class="flex gap-4">
+    <section class="grid grid-cols-[3fr_2fr] gap-4">
       <div ref="plotRef" class="text-xl"></div>
       <div class="flex flex-col gap-4">
         <h2 class="text-xl font-bold">Метод половинного деления</h2>
         <div class="flex flex-col gap-2">
-          <span>Интервал</span>
+          <span class="text-xl font-bold">Интервал</span>
           <div class="flex gap-4 items-center">
             <label for="">От</label>
             <input
@@ -162,7 +159,7 @@ watch(plot, (value, old) => {
               class="input input-sm input-bordered w-20"
               name=""
               id=""
-              v-model="_initialRange.start"
+              v-model="initialRange.start"
             />
           </div>
           <div class="flex gap-4 items-center">
@@ -172,39 +169,57 @@ watch(plot, (value, old) => {
               class="input input-sm input-bordered w-20"
               name=""
               id=""
-              v-model="_initialRange.end"
+              v-model="initialRange.end"
             />
           </div>
         </div>
-        <div class="flex items-center gap-4">
-          <label for="" class="w-max">Количество точек</label>
-          <input
-            v-model.number="countDots"
-            type="number"
-            class="input input-sm input-bordered"
-            id=""
-            min="2"
-            max="1000"
-          />
-        </div>
-        <div class="flex gap-2 flex-col">
-          <h3 class="font-bold">Ответ</h3>
-          <div class="flex flex-col">
-            <span>x: {{ answerDotData.x.toFixed(3) }}</span>
-            <span>y: {{ answerDotData.y.toFixed(3) }}</span>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-4">
+            <label for="" class="w-max">Количество точек</label>
+            <input
+              v-model.number="countDots"
+              type="number"
+              class="input input-sm input-bordered"
+              id=""
+              min="2"
+              max="1000"
+            />
+          </div>
+
+          <div class="flex items-center gap-4">
+            <label for="" class="w-max">Количество шагов</label>
+            <input
+              :value="steps"
+              disabled
+              type="number"
+              class="input input-sm input-bordered w-20"
+              id=""
+              min="2"
+              max="1000"
+            />
           </div>
         </div>
-        <div class="flex items-center gap-4">
-          <label for="" class="w-max">Количество шагов</label>
-          <input
-            :value="steps"
-            disabled
-            type="number"
-            class="input input-sm input-bordered w-20"
-            id=""
-            min="2"
-            max="1000"
-          />
+        <div class="flex flex-col">
+          <span class="text-xl font-bold">Шаги</span>
+
+          <ul class="flex flex-col steps steps-vertical gap-2">
+            <li
+              v-for="(range, i) in answerRanges"
+              :key="range.toString()"
+              class="step after:cursor-pointer"
+              :class="[i === answerRanges.length - 1 ? 'step-primary' : '']"
+            >
+              <div class="grid grid-cols-[repeat(3,140px)] items-center place-items-start gap-4">
+                <span>{{ range }}</span>
+                <span
+                  ><span class="kbd kbd-md mr-2">x</span> {{ trimNumber(range.middle, 3) }}</span
+                >
+                <span
+                  ><span class="kbd kbd-md mr-2">y</span>{{ trimNumber(f(range.middle), 3) }}</span
+                >
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
     </section>
