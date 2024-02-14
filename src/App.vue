@@ -1,28 +1,70 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import * as Plot from '@observablehq/plot'
+import { evaluate, parse, compile, flatten } from 'mathjs'
 
 const plotRef = ref<HTMLDivElement | null>(null)
 
-const f = (x: number) => Math.pow(x, 3) + 3 * x - 3
+const fAsString = ref('x^3 + 4')
+const expr = computed(() => {
+  try {
+    const res = compile(fAsString.value)
+    return res
+  } catch (e) {
+    return null
+  }
+})
+
+const f = computed(() => (x: number) => expr.value ? expr.value.evaluate({ x }) : x)
+
+interface Dot {
+  x: number
+  y: number
+}
 
 class Range {
   public start: number
   public end: number
-  constructor(range: { start: number; end: number }) {
+  public dots: number[] = []
+
+  constructor(range: { start: number; end: number; dots?: [number, number] }) {
     this.start = range.start
     this.end = range.end
+    if (range.dots) this.dots = range.dots
   }
+
   get width() {
     return this.end - this.start
   }
+
   get middle() {
     return (this.start + this.end) / 2
   }
+
   toString() {
-    return `[${+this.start.toFixed(3)};${+this.end.toFixed(3)}]`
+    return `[${trimNumber(this.start, 3)};${trimNumber(this.end, 3)}]`
   }
 }
+
+/*
+interface AnswerRange extends Range {
+  answer: number
+}
+
+class AnswerRangeHalfDivision extends Range implements AnswerRange {
+  constructor(range: { start: number; end: number; dots?: number[] }) {
+    super(range)
+  }
+
+  get answer() {
+    return this.middle
+  }
+}
+
+function isAnswerRange(range: Range): range is AnswerRange {
+  return 'answer' in range
+}
+*/
 
 function trimNumber(num: number, maxLen: number) {
   return +num.toFixed(maxLen)
@@ -35,33 +77,73 @@ const initialRange = ref(
   }),
 )
 
-function halfDivisionSearch(range: Range): Range {
-  const fMiddle = f(range.middle)
+function halfDivision(range: Range): Range {
+  const fMiddle = f.value(range.middle)
   const left = range.start + range.width / 4
   const right = range.end - range.width / 4
-  const fLeft = f(left)
-  const fRight = f(right)
-
-  if (fLeft < fMiddle) return new Range({ start: range.start, end: range.middle })
+  const fLeft = f.value(left)
+  const fRight = f.value(right)
+  const dots: [number, number] = [left, right]
+  if (fLeft < fMiddle) return new Range({ start: range.start, end: range.middle, dots })
   else {
-    if (fMiddle > fRight) return new Range({ start: range.middle, end: range.end })
-    else return new Range({ start: left, end: right })
+    if (fMiddle > fRight) return new Range({ start: range.middle, end: range.end, dots })
+    else return new Range({ start: left, end: right, dots })
   }
 }
+
+function goldenRatioDivision(range: Range): Range {
+  const goldenRule = (3 - Math.sqrt(5)) / 2
+  const left = range.start + goldenRule * range.width
+  const right = range.start + range.end - left
+  const fLeft = f.value(left)
+  const fRight = f.value(right)
+  const dots: [number, number] = [left, right]
+  if (fLeft <= fRight) return new Range({ start: range.start, end: right, dots })
+  else return new Range({ start: left, end: range.end })
+}
+
+const l = ref(0.2)
+const fibNums = [1, 1, 2]
+function findNextFibNum() {
+  const next = fibNums.at(-1)! + fibNums.at(-2)!
+  fibNums.push(next)
+}
+
+const condition = computed(() => Math.abs(initialRange.value.width) / l.value)
+
+while (fibNums.at(-1)! >= condition.value) {
+  findNextFibNum()
+}
+const countFibNums = computed(() => fibNums.length)
+
+function fibonacciDivision(range: Range, k: number): Range {
+  const left =
+    range.start + (fibNums[countFibNums.value - k - 2] / fibNums[countFibNums.value]) * range.width
+  const right =
+    range.start + (fibNums[countFibNums.value - k - 1] / fibNums[countFibNums.value]) * range.width
+  const fLeft = f.value(left)
+  const fRight = f.value(right)
+  if (fLeft <= fRight) {
+    return new Range({ start: range.start, end: right })
+  } else {
+  }
+}
+
+const divisionMethod = halfDivision
 
 function makeSlicedPlotArea(initialRange: Range, range: Range): [Plot.Area, Plot.Area] {
   const leftArea = Plot.areaX(
     [
-      { x: range.start, y: f(initialRange.start) },
-      { x: range.start, y: f(initialRange.end) },
+      { x: range.start, y: f.value(initialRange.start) },
+      { x: range.start, y: f.value(initialRange.end) },
     ],
     { x: 'x', y: 'y', x1: initialRange.start, x2: range.start, opacity: 0.1 },
   )
 
   const rightArea = Plot.areaX(
     [
-      { x: range.start, y: f(initialRange.start) },
-      { x: range.start, y: f(initialRange.end) },
+      { x: range.start, y: f.value(initialRange.start) },
+      { x: range.start, y: f.value(initialRange.end) },
     ],
     { x: 'x', y: 'y', x1: range.end, x2: initialRange.end, opacity: 0.1 },
   )
@@ -71,15 +153,14 @@ function makeSlicedPlotArea(initialRange: Range, range: Range): [Plot.Area, Plot
 
 const countDots = ref(10)
 
-const steps = computed(() => answerRanges.value.length)
+const steps = computed(() => answerRanges.value.length - 1)
 
 function findAnswerRanges(range: Range): Range[] {
   let curSteps = 0
-  // let curRange = range
-  const ranges = [range]
+  const ranges: Range[] = [range]
 
   while (ranges.at(-1)!.width > epsilon.value) {
-    ranges.push(halfDivisionSearch(ranges.at(-1)!))
+    ranges.push(divisionMethod(ranges.at(-1)!))
     curSteps++
   }
   return ranges
@@ -87,13 +168,8 @@ function findAnswerRanges(range: Range): Range[] {
 
 const answerRanges = computed(() => findAnswerRanges(initialRange.value))
 const slisedAreas = computed(() =>
-  answerRanges.value.map(r => makeSlicedPlotArea(initialRange.value, r)).flat(),
+  selectedAnswerRanges.value.map(r => makeSlicedPlotArea(initialRange.value, r)).flat(),
 )
-const answerRange = computed(() => answerRanges.value.at(-1)!)
-const answerDotData = computed(() => ({
-  x: answerRange.value.middle,
-  y: f(answerRange.value.middle),
-}))
 
 const data = computed(() =>
   Array<number>(countDots.value)
@@ -101,55 +177,90 @@ const data = computed(() =>
     .map(
       (_, i) => initialRange.value.start + i * (initialRange.value.width / (countDots.value - 1)),
     )
-    .map(x => ({ x: x, y: f(x) })),
+    .map(x => ({ x: x, y: f.value(x) })),
 )
 
 const epsilon = ref(0.2)
 
-onMounted(() => {
-  plotRef.value!.appendChild(plot.value)
-})
+const selectedStep = ref(answerRanges.value.length - 1)
+const selectedAnswerRanges = computed(() => answerRanges.value.slice(0, selectedStep.value + 1))
+
+function selectStep(step: number) {
+  selectedStep.value = step
+}
 
 const plot = computed(() =>
   Plot.plot({
-    margin: 60,
-    height: window.innerHeight * 0.8,
+    label: '',
+    labelArrow: 'none',
+    marginLeft: 60,
+    height: window.innerHeight * 0.9,
+    //   width: plotWidth.value,
     aspectRatio: 1,
     grid: true,
     marks: [
       Plot.line(data.value, { x: 'x', y: 'y', stroke: 'blue', curve: 'natural' }),
-      Plot.dot(answerRanges.value, { x: d => d.middle, y: d => f(d.middle) }),
-      Plot.crosshair(answerRanges.value, { x: d => d.middle, y: d => f(d.middle) }),
-      Plot.ruleX([initialRange.value.start]),
-      Plot.ruleY([f(initialRange.value.start)]),
+      selectedAnswerRanges.value
+        .at(-1)!
+        .dots.map(dot => [
+          Plot.dot([dot], { x: d => d, y: d => f.value(d), stroke: 'orange' }),
+          Plot.crosshair([dot], { x: d => d, y: d => f.value(d) }),
+        ]),
+
       ...slisedAreas.value,
 
-      Plot.crosshair([answerDotData.value], { x: 'x', y: 'y' }),
+      Plot.ruleY([f.value(initialRange.value.start)]),
+      Plot.ruleX([initialRange.value.start]),
+      Plot.dot([selectedAnswerRanges.value.at(-1)!], {
+        x: d => d.middle,
+        y: d => f.value(d.middle),
+        stroke: 'red',
+      }),
+      Plot.crosshair([selectedAnswerRanges.value.at(-1)!], {
+        x: d => d.middle,
+        y: d => f.value(d.middle),
+      }),
+      /*Plot.crosshair([answerDotData.value], { x: 'x', y: 'y' }),
       Plot.dot([answerDotData.value], {
         x: 'x',
         y: 'y',
         fill: 'red',
-      }),
+      }),*/
       // Plot.frame(),
-      // Plot.dotX(data, { x: 'x', y: 'y' }),
     ],
   }),
 )
+const plotWidth = ref(window.innerWidth)
+function onWindowResize() {}
+
+onMounted(() => {
+  plotRef.value!.appendChild(plot.value)
+  window.addEventListener('resize', onWindowResize)
+})
 
 watch(plot, (value, old) => {
-  plotRef.value!.removeChild(old)
-  plotRef.value!.appendChild(value)
+  plotRef.value?.removeChild(old)
+  plotRef.value?.appendChild(value)
 })
 </script>
 
 <template>
-  <!-- <canvas ref="canvas" width="500" height="500"></canvas> -->
-  <main class="container mx-auto my-8 flex gap-4 flex-col">
-    <h1 class="text-2xl font-bold">Методы оптимизации</h1>
-    <section class="grid grid-cols-[3fr_2fr] gap-4">
-      <div ref="plotRef" class="text-xl"></div>
+  <main class="w-[90dvw] mx-auto my-8 flex gap-4 flex-col">
+    <h1 class="text-3xl font-bold">Методы оптимизации</h1>
+    <section class="grid grid-cols-[max-content_1fr] gap-4">
+      <div ref="plotRef" role="img"></div>
       <div class="flex flex-col gap-4">
-        <h2 class="text-xl font-bold">Метод половинного деления</h2>
+        <h2 class="text-2xl font-bold">Метод половинного деления</h2>
+        <div class="flex flex-col gap-2">
+          <h4 class="text-xl font-bold">Функция</h4>
+          <label
+            class="input input-bordered flex items-center gap-2 w-fit"
+            :class="[expr === null ? 'input-error' : '']"
+          >
+            y =
+            <input type="text" class="grow" placeholder="x^2 + 1" v-model.lazy="fAsString" />
+          </label>
+        </div>
         <div class="flex flex-col gap-2">
           <span class="text-xl font-bold">Интервал</span>
           <div class="flex gap-4 items-center">
@@ -204,10 +315,12 @@ watch(plot, (value, old) => {
 
           <ul class="flex flex-col steps steps-vertical gap-2">
             <li
+              :data-content="i"
+              @click.self="selectStep(i)"
               v-for="(range, i) in answerRanges"
               :key="range.toString()"
               class="step after:cursor-pointer"
-              :class="[i === answerRanges.length - 1 ? 'step-primary' : '']"
+              :class="[i === selectedStep ? 'step-primary' : '']"
             >
               <div class="grid grid-cols-[repeat(3,140px)] items-center place-items-start gap-4">
                 <span>{{ range }}</span>
