@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useWindowSize } from '@vueuse/core'
+
 import * as Plot from '@observablehq/plot'
-import { compile, evaluate, flatten, parse, round } from 'mathjs'
+import { compile } from 'mathjs/number'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import {
@@ -17,8 +19,11 @@ import { Checkbox } from '~/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 
-import { toRounded } from '~/utils/math'
+import { roundToFixed } from '~/utils/math'
 import { Range, fibonacciDivisionAnswer, goldenRatioDivisionAnswer, halfDivisionAnswer } from '~/utils/optimization-methods'
+
+const decimalPlaces = ref(3)
+const toRounded = (x: number) => roundToFixed(x, decimalPlaces.value)
 
 const methods = ['Метод половинного деления', 'Метод золотого сечения', 'Метод чилел Фибоначчи'] as const
 type Method = typeof methods[number]
@@ -37,7 +42,19 @@ const expr = computed(() => {
     return null
   }
 })
-const f = computed(() => (x: number) => expr.value ? (expr.value.evaluate({ x }) as number) : x)
+
+function f(x: number) {
+  if (expr.value === null)
+    return x
+  try {
+    const res = expr.value.evaluate({ x })
+    return res as number
+  }
+  catch (e) {
+    console.log('EEEEE', e)
+    return x
+  }
+}
 
 const initialRange = ref(
   new Range({
@@ -48,19 +65,19 @@ const initialRange = ref(
 
 const l = ref(0.2)
 
-function makeSlicedPlotArea(initialRange: Range, range: Range): [Plot.Area, Plot.Area] {
+function makeSlicedPlotArea(initialRange: Range, range: Range, minY: number, maxY: number): [Plot.Area, Plot.Area] {
   const leftArea = Plot.areaX(
     [
-      { x: range.start, y: f.value(initialRange.start) },
-      { x: range.start, y: f.value(initialRange.end) },
+      { x: range.start, y: minY },
+      { x: range.start, y: maxY },
     ],
     { x: 'x', y: 'y', x1: initialRange.start, x2: range.start, opacity: 0.1 },
   )
 
   const rightArea = Plot.areaX(
     [
-      { x: range.start, y: f.value(initialRange.start) },
-      { x: range.start, y: f.value(initialRange.end) },
+      { x: range.start, y: minY },
+      { x: range.start, y: maxY },
     ],
     { x: 'x', y: 'y', x1: range.end, x2: initialRange.end, opacity: 0.1 },
   )
@@ -68,15 +85,15 @@ function makeSlicedPlotArea(initialRange: Range, range: Range): [Plot.Area, Plot
   return [leftArea, rightArea]
 }
 
-const countDots = ref(10)
+const countDots = ref(100)
 
 const epsilon = ref(0.2)
 
 function findAnswerRanges(range: Range): Range[] {
   switch (selectedMethod.value) {
-    case 'Метод половинного деления' : return halfDivisionAnswer(range, f.value, epsilon.value)
-    case 'Метод золотого сечения' : return goldenRatioDivisionAnswer(range, f.value, epsilon.value)
-    case 'Метод чилел Фибоначчи': return fibonacciDivisionAnswer(range, f.value, epsilon.value, l.value)
+    case 'Метод половинного деления' : return halfDivisionAnswer(range, f, epsilon.value)
+    case 'Метод золотого сечения' : return goldenRatioDivisionAnswer(range, f, epsilon.value)
+    case 'Метод чилел Фибоначчи': return fibonacciDivisionAnswer(range, f, epsilon.value, l.value)
   }
 }
 const answerRanges = computed(() => findAnswerRanges(initialRange.value))
@@ -84,29 +101,35 @@ const selectedStep = ref(answerRanges.value.length - 1)
 const selectedAnswerRanges = computed(() => answerRanges.value.slice(0, selectedStep.value + 1))
 const steps = computed(() => answerRanges.value.length - 1)
 
-const slisedAreas = computed(() =>
-  selectedAnswerRanges.value.map(r => makeSlicedPlotArea(initialRange.value, r)).flat(),
-)
-
 const data = computed(() =>
   Array<number>(countDots.value)
     .fill(0)
     .map(
       (_, i) => initialRange.value.start + i * (initialRange.value.width / (countDots.value - 1)),
     )
-    .map(x => ({ x, y: f.value(x) })),
+    .map(x => ({ x, y: f(x) })),
 )
+const minY = computed(() => Math.min(...data.value.map(d => d.y)))
+const maxY = computed(() => Math.max(...data.value.map(d => d.y)))
 
+const slisedAreas = computed(() =>
+  selectedAnswerRanges.value.map(r => makeSlicedPlotArea(initialRange.value, r, minY.value, maxY.value)).flat(),
+)
 function selectStep(step: number) {
   selectedStep.value = step
 }
 
+watch(selectedMethod, () => {
+  selectedStep.value = steps.value
+})
+
+const { height: windowHeight } = useWindowSize()
 const plot = computed(() =>
   Plot.plot({
     label: '',
     labelArrow: 'none',
-    marginLeft: 35,
-    height: window.innerHeight * 0.9,
+    marginLeft: 65,
+    height: windowHeight.value * 0.9,
     //   width: plotWidth.value,
     aspectRatio: 1,
     grid: true,
@@ -115,22 +138,22 @@ const plot = computed(() =>
       selectedAnswerRanges.value
         .at(-1)!
         .dots.map(dot => [
-          Plot.dot([dot], { x: d => d, y: d => f.value(d), stroke: 'orange' }),
-          Plot.crosshair([dot], { x: d => d, y: d => f.value(d) }),
+          Plot.dot([dot], { x: d => d, y: d => f(d), stroke: 'orange' }),
+          Plot.crosshair([dot], { x: d => d, y: d => f(d) }),
         ]),
 
       ...slisedAreas.value,
 
-      Plot.ruleY([f.value(initialRange.value.start)]),
+      Plot.ruleY([f(initialRange.value.start)]),
       Plot.ruleX([initialRange.value.start]),
       Plot.dot([selectedAnswerRanges.value.at(-1)!], {
         x: d => d.middle,
-        y: d => f.value(d.middle),
+        y: d => f(d.middle),
         stroke: 'red',
       }),
       Plot.crosshair([selectedAnswerRanges.value.at(-1)!], {
         x: d => d.middle,
-        y: d => f.value(d.middle),
+        y: d => f(d.middle),
       }),
       /* Plot.crosshair([answerDotData.value], { x: 'x', y: 'y' }),
       Plot.dot([answerDotData.value], {
@@ -143,11 +166,9 @@ const plot = computed(() =>
   }),
 )
 // const plotWidth = ref(window.innerWidth)
-function onWindowResize() {}
 
 onMounted(() => {
   plotRef.value!.appendChild(plot.value)
-  window.addEventListener('resize', onWindowResize)
 })
 
 watch(plot, (value, old) => {
@@ -157,8 +178,8 @@ watch(plot, (value, old) => {
 </script>
 
 <template>
-  <main class="w-[90dvw] mx-auto my-8 flex gap-4 flex-col">
-    <h1 class="text-3xl font-bold">
+  <main class="w-[90dvw] mx-auto my-4 flex gap-4 flex-col">
+    <h1 class="text-2xl font-bold">
       Методы оптимизации
     </h1>
     <section class="grid grid-cols-[max-content_1fr] gap-4">
@@ -180,27 +201,29 @@ watch(plot, (value, old) => {
           <h4 class="">
             Функция
           </h4>
-          <div class="flex gap-4 items-center">
+          <fieldset class="flex gap-4 items-center">
             <Label :class="[expr === null ? 'ring-red-500' : '']"> f(x)</Label>
-            <Input v-model.lazy="fAsString" class="w-[300px]" type="text" placeholder="x^2 + 1" />
-          </div>
+            <Input :model-value="fAsString" class="w-[300px]" type="text" placeholder="x^2 + 1" @change="s => fAsString = (s as string)" />
+          </fieldset>
         </div>
         <div class="flex flex-row gap-8 items-center">
-          <span class="">Интервал</span>
+          <h4 class="">
+            Интервал
+          </h4>
+          <fieldset class="flex gap-4 items-center">
+            <Label for="range-start" class="text-base">От</Label>
+            <Input id="range-start" v-model="initialRange.start" type="number" class="w-20" name="" />
+          </fieldset>
           <div class="flex gap-4 items-center">
-            <Label class="text-base" for="">От</Label>
-            <Input id="" v-model="initialRange.start" type="number" class="w-20" name="" />
-          </div>
-          <div class="flex gap-4 items-center">
-            <Label class="text-base" for="">До</Label>
-            <Input id="" v-model="initialRange.end" type="number" class="w-20" name="" />
+            <Label for="range-start" class="text-base">До</Label>
+            <Input id="range-end" v-model="initialRange.end" type="number" class="w-20" name="" />
           </div>
         </div>
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-4">
-            <Label class="text-base">Точность&nbsp;&nbsp;&epsilon;</Label>
+        <div class="grid w-[600px] grid-rows-2 grid-cols-2 gap-x-8 gap-y-2">
+          <fieldset class="flex justify-between items-center gap-4">
+            <Label for="accuracy-epsilon" class="text-base">Точность&nbsp;&nbsp;&epsilon;</Label>
             <Input
-              id=""
+              id="accuracy-epsilon"
               v-model.number="epsilon"
               type="number"
               class="w-20"
@@ -208,9 +231,21 @@ watch(plot, (value, old) => {
               step="0.01"
               max="1"
             />
-          </div>
+          </fieldset>
+          <fieldset class="flex items-center justify-between gap-4">
+            <Label for="decimal-places" class="text-base">Знаков после запятой</Label>
+            <Input
+              id="decimal-places"
+              v-model.number="decimalPlaces"
+              type="number"
+              class="w-20"
+              min="2"
+              step="1"
+              max="10"
+            />
+          </fieldset>
 
-          <div class="flex items-center gap-4">
+          <fieldset class="flex justify-between  items-center gap-4">
             <Label for="count-dots" class="text-base">Количество точек</Label>
             <Input
               id="count-dots"
@@ -220,12 +255,12 @@ watch(plot, (value, old) => {
               min="2"
               max="1000"
             />
-          </div>
+          </fieldset>
 
-          <div class="flex items-center gap-4">
-            <Label for="" class="text-base">Количество шагов</Label>
+          <fieldset class="flex justify-between items-center gap-4">
+            <Label for="count-steps" class="text-base">Количество шагов</Label>
             <Input
-              id=""
+              id="count-steps"
               :value="steps"
               disabled
               :placeholder="steps"
@@ -234,7 +269,7 @@ watch(plot, (value, old) => {
               min="2"
               max="1000"
             />
-          </div>
+          </fieldset>
         </div>
         <div class="flex flex-col">
           <span class="text-xl font-bold">Шаги</span>
