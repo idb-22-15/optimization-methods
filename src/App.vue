@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import * as Plot from '@observablehq/plot'
-import { evaluate, parse, compile, flatten } from 'mathjs'
+import { evaluate, parse, compile, flatten, round } from 'mathjs'
+
+const roundToFixed = (num: number, accuracy: number): number => {
+  const factor = Math.pow(10, accuracy)
+  return Math.round(num * factor) / factor
+}
+
+const toRounded = (x: number) => roundToFixed(x, 3)
 
 const plotRef = ref<HTMLDivElement | null>(null)
 
-const fAsString = ref('x^3 + 4')
+const fAsString = ref('x^3')
 const expr = computed(() => {
   try {
     const res = compile(fAsString.value)
@@ -15,7 +22,7 @@ const expr = computed(() => {
   }
 })
 
-const f = computed(() => (x: number) => expr.value ? expr.value.evaluate({ x }) : x)
+const f = computed(() => (x: number) => expr.value ? (expr.value.evaluate({ x }) as number) : x)
 
 interface Dot {
   x: number
@@ -42,32 +49,8 @@ class Range {
   }
 
   toString() {
-    return `[${trimNumber(this.start, 3)};${trimNumber(this.end, 3)}]`
+    return `[${this.start};${this.end}]`
   }
-}
-
-/*
-interface AnswerRange extends Range {
-  answer: number
-}
-
-class AnswerRangeHalfDivision extends Range implements AnswerRange {
-  constructor(range: { start: number; end: number; dots?: number[] }) {
-    super(range)
-  }
-
-  get answer() {
-    return this.middle
-  }
-}
-
-function isAnswerRange(range: Range): range is AnswerRange {
-  return 'answer' in range
-}
-*/
-
-function trimNumber(num: number, maxLen: number) {
-  return +num.toFixed(maxLen)
 }
 
 const initialRange = ref(
@@ -77,12 +60,12 @@ const initialRange = ref(
   }),
 )
 
-function halfDivision(range: Range): Range {
-  const fMiddle = f.value(range.middle)
+function halfDivision(range: Range, f: Fn): Range {
+  const fMiddle = f(range.middle)
   const left = range.start + range.width / 4
   const right = range.end - range.width / 4
-  const fLeft = f.value(left)
-  const fRight = f.value(right)
+  const fLeft = f(left)
+  const fRight = f(right)
   const dots: [number, number] = [left, right]
   if (fLeft < fMiddle) return new Range({ start: range.start, end: range.middle, dots })
   else {
@@ -93,39 +76,46 @@ function halfDivision(range: Range): Range {
 
 function goldenRatioDivision(range: Range): Range {
   const goldenRule = (3 - Math.sqrt(5)) / 2
-  const left = range.start + goldenRule * range.width
-  const right = range.start + range.end - left
-  const fLeft = f.value(left)
-  const fRight = f.value(right)
+  const left = toRounded(range.start + goldenRule * range.width)
+  const right = toRounded(range.start + range.end - left)
+  const fLeft = toRounded(f.value(left))
+  const fRight = toRounded(f.value(right))
   const dots: [number, number] = [left, right]
   if (fLeft <= fRight) return new Range({ start: range.start, end: right, dots })
   else return new Range({ start: left, end: range.end })
 }
 
 const l = ref(0.2)
-const fibNums = [1, 1, 2]
-function findNextFibNum() {
-  const next = fibNums.at(-1)! + fibNums.at(-2)!
-  fibNums.push(next)
+function fibonacci(n: number) {
+  const fibSequence = [0, 1]
+  while (fibSequence.length < n) {
+    const nextNumber = fibSequence[fibSequence.length - 1] + fibSequence[fibSequence.length - 2]
+    fibSequence.push(nextNumber)
+  }
+  return fibSequence
 }
 
+const fibNums = fibonacci(100)
 const condition = computed(() => Math.abs(initialRange.value.width) / l.value)
 
-while (fibNums.at(-1)! >= condition.value) {
-  findNextFibNum()
-}
-const countFibNums = computed(() => fibNums.length)
+const maxSteps = computed(() => {
+  for (let n = 0; n < fibNums.length; n++) {
+    if (fibNums[n] >= condition.value) return n
+  }
+  return 0
+})
 
-function fibonacciDivision(range: Range, k: number): Range {
-  const left =
-    range.start + (fibNums[countFibNums.value - k - 2] / fibNums[countFibNums.value]) * range.width
-  const right =
-    range.start + (fibNums[countFibNums.value - k - 1] / fibNums[countFibNums.value]) * range.width
-  const fLeft = f.value(left)
-  const fRight = f.value(right)
+type Fn = (x: number) => number
+
+function fibonacciDivision(range: Range, f: Fn, n: number, k: number): Range {
+  const left = toRounded(range.start + (fibNums[n - k - 2] / fibNums[n]) * range.width)
+  const right = toRounded(range.start + (fibNums[n - k - 1] / fibNums[n]) * range.width)
+  const fLeft = toRounded(f(left))
+  const fRight = toRounded(f(right))
   if (fLeft <= fRight) {
     return new Range({ start: range.start, end: right })
   } else {
+    return new Range({ start: left, end: range.end })
   }
 }
 
@@ -159,8 +149,15 @@ function findAnswerRanges(range: Range): Range[] {
   let curSteps = 0
   const ranges: Range[] = [range]
 
-  while (ranges.at(-1)!.width > epsilon.value) {
-    ranges.push(divisionMethod(ranges.at(-1)!))
+  // while (ranges.at(-1)!.width > epsilon.value) {
+  //   ranges.push(divisionMethod(ranges.at(-1)!, f.value))
+  //   curSteps++
+  // }
+  // return ranges
+
+  while (curSteps <= maxSteps.value - 3 && ranges.at(-1)!.width >= epsilon.value) {
+    const newRange = fibonacciDivision(ranges.at(-1)!, f.value, maxSteps.value, curSteps)
+    ranges.push(newRange)
     curSteps++
   }
   return ranges
@@ -257,7 +254,7 @@ watch(plot, (value, old) => {
             class="input input-bordered flex items-center gap-2 w-fit"
             :class="[expr === null ? 'input-error' : '']"
           >
-            y =
+            f(x) =
             <input type="text" class="grow" placeholder="x^2 + 1" v-model.lazy="fAsString" />
           </label>
         </div>
@@ -286,6 +283,19 @@ watch(plot, (value, old) => {
         </div>
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-4">
+            <label for="" class="w-max">Точность&nbsp;&nbsp;&epsilon;</label>
+            <input
+              v-model.number="epsilon"
+              type="number"
+              class="input input-sm input-bordered"
+              id=""
+              min="0.001"
+              step="0.01"
+              max="1"
+            />
+          </div>
+
+          <div class="flex items-center gap-4">
             <label for="" class="w-max">Количество точек</label>
             <input
               v-model.number="countDots"
@@ -310,25 +320,28 @@ watch(plot, (value, old) => {
             />
           </div>
         </div>
-        <div class="flex flex-col">
+        <div class="flex flex-col text-base">
           <span class="text-xl font-bold">Шаги</span>
 
           <ul class="flex flex-col steps steps-vertical gap-2">
             <li
-              :data-content="i"
+              :data-content="i === 0 ? 'x' : i - 1"
               @click.self="selectStep(i)"
               v-for="(range, i) in answerRanges"
               :key="range.toString()"
               class="step after:cursor-pointer"
               :class="[i === selectedStep ? 'step-primary' : '']"
             >
-              <div class="grid grid-cols-[repeat(3,140px)] items-center place-items-start gap-4">
+              <div class="grid grid-cols-[repeat(5,120px)] items-center place-items-start gap-4">
                 <span>{{ range }}</span>
+                <span><span class="kbd kbd-md mr-2">x</span> {{ toRounded(range.middle) }}</span>
                 <span
-                  ><span class="kbd kbd-md mr-2">x</span> {{ trimNumber(range.middle, 3) }}</span
+                  ><span class="kbd kbd-md mr-2">f(x)</span>{{ toRounded(f(range.middle)) }}</span
                 >
-                <span
-                  ><span class="kbd kbd-md mr-2">y</span>{{ trimNumber(f(range.middle), 3) }}</span
+
+                <span v-for="(dot, i) in range.dots"
+                  ><span class="kbd kbd-md mr-2">{{ i === 0 ? 'a' : 'b' }}</span
+                  >{{ toRounded(f(dot)) }}</span
                 >
               </div>
             </li>
