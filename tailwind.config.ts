@@ -1,7 +1,16 @@
+import type { Config } from 'tailwindcss'
 import animate from 'tailwindcss-animate'
+import { fontFamily } from 'tailwindcss/defaultTheme'
 
-/** @type {import('tailwindcss').Config} */
 export default {
+  content: [
+    './components/**/*.{js,vue,ts}',
+    './layouts/**/*.vue',
+    './pages/**/*.vue',
+    './plugins/**/*.{js,ts}',
+    './app.vue',
+    './error.vue',
+  ],
   darkMode: ['class'],
   safelist: ['dark'],
 
@@ -14,6 +23,12 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: [
+          'Roboto Mono',
+          ...fontFamily.sans,
+        ],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -57,20 +72,20 @@ export default {
       },
       keyframes: {
         'accordion-down': {
-          from: { height: 0 },
+          from: { height: '0' },
           to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
           from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: 0 },
+          to: { height: '0' },
         },
         'collapsible-down': {
-          from: { height: 0 },
+          from: { height: '0' },
           to: { height: 'var(--radix-collapsible-content-height)' },
         },
         'collapsible-up': {
           from: { height: 'var(--radix-collapsible-content-height)' },
-          to: { height: 0 },
+          to: { height: ' 0' },
         },
       },
       animation: {
@@ -82,4 +97,4 @@ export default {
     },
   },
   plugins: [animate],
-}
+} satisfies Config

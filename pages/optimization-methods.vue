@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
 import { useWindowSize } from '@vueuse/core'
-
 import * as Plot from '@observablehq/plot'
+
 import { compile } from 'mathjs/number'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
@@ -51,7 +50,6 @@ function f(x: number) {
     return res as number
   }
   catch (e) {
-    console.log('EEEEE', e)
     return x
   }
 }
@@ -91,9 +89,9 @@ const epsilon = ref(0.2)
 
 function findAnswerRanges(range: Range): Range[] {
   switch (selectedMethod.value) {
-    case 'Метод половинного деления' : return halfDivisionAnswer(range, f, epsilon.value)
-    case 'Метод золотого сечения' : return goldenRatioDivisionAnswer(range, f, epsilon.value)
-    case 'Метод чилел Фибоначчи': return fibonacciDivisionAnswer(range, f, epsilon.value, l.value)
+    case 'Метод половинного деления' : return halfDivisionAnswer(range, f, epsilon.value, toRounded)
+    case 'Метод золотого сечения' : return goldenRatioDivisionAnswer(range, f, epsilon.value, toRounded)
+    case 'Метод чилел Фибоначчи': return fibonacciDivisionAnswer(range, f, epsilon.value, l.value, toRounded)
   }
 }
 const answerRanges = computed(() => findAnswerRanges(initialRange.value))
@@ -128,7 +126,7 @@ const plot = computed(() =>
   Plot.plot({
     label: '',
     labelArrow: 'none',
-    marginLeft: 65,
+    // marginLeft: 65,
     height: windowHeight.value * 0.9,
     //   width: plotWidth.value,
     aspectRatio: 1,
@@ -178,7 +176,7 @@ watch(plot, (value, old) => {
 </script>
 
 <template>
-  <main class="w-[90dvw] mx-auto my-4 flex gap-4 flex-col">
+  <main class="px-8 mx-auto my-4 flex gap-4 flex-col">
     <h1 class="text-2xl font-bold">
       Методы оптимизации
     </h1>
@@ -272,9 +270,9 @@ watch(plot, (value, old) => {
           </fieldset>
         </div>
         <div class="flex flex-col">
-          <span class="text-xl font-bold">Шаги</span>
+          <span class="text-lg font-bold">Шаги</span>
 
-          <RadioGroup class="w-max" :model-value="`${selectedStep}`">
+          <RadioGroup class="" :model-value="`${selectedStep}`">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -293,7 +291,7 @@ watch(plot, (value, old) => {
                 <TableRow
                   v-for="(range, i) in answerRanges"
                   :key="range.toString()"
-                  :class="[i === selectedStep ? 'bg-primary-foreground' : '']"
+                  :class="[i === selectedStep ? 'bg-zinc-200' : '']"
                   class="cursor-pointer"
                   @click="selectStep(i)"
                 >

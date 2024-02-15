@@ -30,12 +30,12 @@ export class Range {
   }
 }
 
-export function halfDivision(range: Range, f: Fn): Range {
-  const fMiddle = f(range.middle)
-  const left = range.start + range.width / 4
-  const right = range.end - range.width / 4
-  const fLeft = f(left)
-  const fRight = f(right)
+export function halfDivision(range: Range, f: Fn, toRounded: Fn): Range {
+  const fMiddle = toRounded(f(range.middle))
+  const left = toRounded(range.start + range.width / 4)
+  const right = toRounded(range.end - range.width / 4)
+  const fLeft = toRounded(f(left))
+  const fRight = toRounded(f(right))
   const dots: [number, number] = [left, right]
   if (fLeft < fMiddle) {
     return new Range({ start: range.start, end: range.middle, dots })
@@ -47,16 +47,16 @@ export function halfDivision(range: Range, f: Fn): Range {
   }
 }
 
-export function halfDivisionAnswer(range: Range, f: Fn, epsilon: number): Range[] {
+export function halfDivisionAnswer(range: Range, f: Fn, epsilon: number, toRounded: Fn): Range[] {
   const ranges: Range[] = [range]
 
   while (ranges.at(-1)!.width > epsilon)
-    ranges.push(halfDivision(ranges.at(-1)!, f))
+    ranges.push(halfDivision(ranges.at(-1)!, f, toRounded))
 
   return ranges
 }
 
-export function goldenRatioDivision(range: Range, f: Fn): Range {
+export function goldenRatioDivision(range: Range, f: Fn, toRounded: Fn): Range {
   const goldenRule = (3 - Math.sqrt(5)) / 2
   const left = toRounded(range.start + goldenRule * range.width)
   const right = toRounded(range.start + range.end - left)
@@ -68,11 +68,11 @@ export function goldenRatioDivision(range: Range, f: Fn): Range {
   else return new Range({ start: left, end: range.end })
 }
 
-export function goldenRatioDivisionAnswer(range: Range, f: Fn, epsilon: number): Range[] {
+export function goldenRatioDivisionAnswer(range: Range, f: Fn, epsilon: number, toRounded: Fn): Range[] {
   const ranges: Range[] = [range]
 
   while (ranges.at(-1)!.width > epsilon)
-    ranges.push(goldenRatioDivision(ranges.at(-1)!, f))
+    ranges.push(goldenRatioDivision(ranges.at(-1)!, f, toRounded))
 
   return ranges
 }
@@ -88,7 +88,7 @@ function fibonacci(n: number) {
 
 export const fibNums = fibonacci(100)
 
-export function fibonacciDivision(range: Range, f: Fn, n: number, k: number): Range {
+export function fibonacciDivision(range: Range, f: Fn, n: number, k: number, toRounded: Fn): Range {
   const left = toRounded(range.start + (fibNums[n - k - 2] / fibNums[n]) * range.width)
   const right = toRounded(range.start + (fibNums[n - k - 1] / fibNums[n]) * range.width)
   const fLeft = toRounded(f(left))
@@ -99,7 +99,7 @@ export function fibonacciDivision(range: Range, f: Fn, n: number, k: number): Ra
   else return new Range({ start: left, end: range.end, dots })
 }
 
-export function fibonacciDivisionAnswer(range: Range, f: Fn, epsilon: number, l: number) {
+export function fibonacciDivisionAnswer(range: Range, f: Fn, epsilon: number, l: number, toRounded: Fn) {
   const condition = Math.abs(range.width) / l
 
   const maxSteps = (() => {
@@ -113,7 +113,7 @@ export function fibonacciDivisionAnswer(range: Range, f: Fn, epsilon: number, l:
   const ranges: Range[] = [range]
 
   while (curSteps <= maxSteps - 3 && ranges.at(-1)!.width >= epsilon) {
-    const newRange = fibonacciDivision(ranges.at(-1)!, f, maxSteps, curSteps)
+    const newRange = fibonacciDivision(ranges.at(-1)!, f, maxSteps, curSteps, toRounded)
     ranges.push(newRange)
     curSteps++
   }
