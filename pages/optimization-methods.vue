@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useWindowSize } from '@vueuse/core'
+import { useElementSize, useWindowSize } from '@vueuse/core'
 import * as Plot from '@observablehq/plot'
 
 import { compile } from 'mathjs/number'
@@ -13,13 +13,14 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-
+import PlotFigure from '~/components/PlotFigure'
 import { Checkbox } from '~/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 
 import { roundToFixed } from '~/utils/math'
-import { Range, fibonacciDivisionAnswer, goldenRatioDivisionAnswer, halfDivisionAnswer } from '~/utils/optimization-methods'
+import { Dot, Range, fibonacciDivisionAnswer, goldenRatioDivisionAnswer, halfDivisionAnswer } from '~/utils/optimization-methods'
+import type { IRange } from '~/utils/optimization-methods'
 
 const decimalPlaces = ref(3)
 const toRounded = (x: number) => roundToFixed(x, decimalPlaces.value)
@@ -54,30 +55,31 @@ function f(x: number) {
   }
 }
 
-const initialRange = ref(
+const initialRange = ref<Range>(
   new Range({
-    start: -10,
-    end: 10,
+    start: new Dot(-10, f),
+    end: new Dot(10, f),
+    f,
   }),
-)
+) as Ref<Range>
 
 const l = ref(0.2)
 
 function makeSlicedPlotArea(initialRange: Range, range: Range, minY: number, maxY: number): [Plot.Area, Plot.Area] {
   const leftArea = Plot.areaX(
     [
-      { x: range.start, y: minY },
-      { x: range.start, y: maxY },
+      { x: range.start.x, y: minY },
+      { x: range.start.x, y: maxY },
     ],
-    { x: 'x', y: 'y', x1: initialRange.start, x2: range.start, opacity: 0.1 },
+    { x: 'x', y: 'y', x1: initialRange.start.x, x2: range.start.x, opacity: 0.1 },
   )
 
   const rightArea = Plot.areaX(
     [
-      { x: range.start, y: minY },
-      { x: range.start, y: maxY },
+      { x: range.start.x, y: minY },
+      { x: range.start.x, y: maxY },
     ],
-    { x: 'x', y: 'y', x1: range.end, x2: initialRange.end, opacity: 0.1 },
+    { x: 'x', y: 'y', x1: range.end.x, x2: initialRange.end.x, opacity: 0.1 },
   )
 
   return [leftArea, rightArea]
@@ -99,11 +101,11 @@ const selectedStep = ref(answerRanges.value.length - 1)
 const selectedAnswerRanges = computed(() => answerRanges.value.slice(0, selectedStep.value + 1))
 const steps = computed(() => answerRanges.value.length - 1)
 
-const data = computed(() =>
+const data = computed<Dot[]>(() =>
   Array<number>(countDots.value)
     .fill(0)
     .map(
-      (_, i) => initialRange.value.start + i * (initialRange.value.width / (countDots.value - 1)),
+      (_, i) => initialRange.value.start.x + i * (initialRange.value.width / (countDots.value - 1)),
     )
     .map(x => ({ x, y: f(x) })),
 )
@@ -111,7 +113,7 @@ const minY = computed(() => Math.min(...data.value.map(d => d.y)))
 const maxY = computed(() => Math.max(...data.value.map(d => d.y)))
 
 const slisedAreas = computed(() =>
-  selectedAnswerRanges.value.map(r => makeSlicedPlotArea(initialRange.value, r, minY.value, maxY.value)).flat(),
+  selectedAnswerRanges.value.map(r => makeSlicedPlotArea(initialRange.value as Range, r, minY.value, maxY.value)).flat(),
 )
 function selectStep(step: number) {
   selectedStep.value = step
@@ -122,12 +124,19 @@ watch(selectedMethod, () => {
 })
 
 const { height: windowHeight } = useWindowSize()
+const { width: plotRefWindth } = useElementSize(plotRef, { width: 500, height: 500 })
+
+const plotRefSize = computed(() => {
+  const height = Math.min(windowHeight.value * 0.9, plotRefWindth.value)
+  return height
+})
+
 const plot = computed(() =>
   Plot.plot({
     label: '',
     labelArrow: 'none',
     // marginLeft: 65,
-    height: windowHeight.value * 0.9,
+    height: plotRefSize.value,
     //   width: plotWidth.value,
     aspectRatio: 1,
     grid: true,
@@ -135,23 +144,23 @@ const plot = computed(() =>
       Plot.line(data.value, { x: 'x', y: 'y', stroke: 'blue', curve: 'natural' }),
       selectedAnswerRanges.value
         .at(-1)!
-        .dots.map(dot => [
-          Plot.dot([dot], { x: d => d, y: d => f(d), stroke: 'orange' }),
-          Plot.crosshair([dot], { x: d => d, y: d => f(d) }),
+        .dots?.map(dot => [
+          Plot.dot([dot], { x: d => d.x, y: d => d.y, stroke: 'orange' }),
+          Plot.crosshair([dot], { x: d => d.x, y: d => d.y }),
         ]),
 
       ...slisedAreas.value,
 
-      Plot.ruleY([f(initialRange.value.start)]),
-      Plot.ruleX([initialRange.value.start]),
+      Plot.ruleY([initialRange.value.start.y]),
+      Plot.ruleX([initialRange.value.start.x]),
       Plot.dot([selectedAnswerRanges.value.at(-1)!], {
-        x: d => d.middle,
-        y: d => f(d.middle),
+        x: d => d.middle.x,
+        y: d => d.middle.y,
         stroke: 'red',
       }),
       Plot.crosshair([selectedAnswerRanges.value.at(-1)!], {
-        x: d => d.middle,
-        y: d => f(d.middle),
+        x: d => d.middle.x,
+        y: d => d.middle.y,
       }),
       /* Plot.crosshair([answerDotData.value], { x: 'x', y: 'y' }),
       Plot.dot([answerDotData.value], {
@@ -169,8 +178,8 @@ onMounted(() => {
   plotRef.value!.appendChild(plot.value)
 })
 
-watch(plot, (value, old) => {
-  plotRef.value?.removeChild(old)
+watch(plot, (value, _old) => {
+  plotRef.value?.firstChild?.remove()
   plotRef.value?.appendChild(value)
 })
 </script>
@@ -180,9 +189,9 @@ watch(plot, (value, old) => {
     <h1 class="text-2xl font-bold">
       Методы оптимизации
     </h1>
-    <section class="grid grid-cols-[max-content_1fr] gap-4">
-      <div ref="plotRef" role="img" />
-      <div class="flex flex-col gap-4">
+    <section class="grid 2xl:grid-cols-1 grid-rows-[repeat(2,fit-content)] grid-cols-[max-content,1fr] gap-4">
+      <div ref="plotRef" class="row-span-2" role="img" />
+      <section class="flex flex-col gap-4">
         <Tabs v-model="selectedMethod">
           <TabsList>
             <TabsTrigger
@@ -210,14 +219,14 @@ watch(plot, (value, old) => {
           </h4>
           <fieldset class="flex gap-4 items-center">
             <Label for="range-start" class="text-base">От</Label>
-            <Input id="range-start" v-model="initialRange.start" type="number" class="w-20" name="" />
+            <Input id="range-start" v-model="initialRange.start.x" type="number" class="w-20" name="" />
           </fieldset>
           <div class="flex gap-4 items-center">
             <Label for="range-start" class="text-base">До</Label>
-            <Input id="range-end" v-model="initialRange.end" type="number" class="w-20" name="" />
+            <Input id="range-end" v-model="initialRange.end.x" type="number" class="w-20" name="" />
           </div>
         </div>
-        <div class="grid w-[600px] grid-rows-2 grid-cols-2 gap-x-8 gap-y-2">
+        <div class="grid w-[640px] grid-rows-2 grid-cols-2 gap-x-8 gap-y-2">
           <fieldset class="flex justify-between items-center gap-4">
             <Label for="accuracy-epsilon" class="text-base">Точность&nbsp;&nbsp;&epsilon;</Label>
             <Input
@@ -269,51 +278,51 @@ watch(plot, (value, old) => {
             />
           </fieldset>
         </div>
-        <div class="flex flex-col">
-          <span class="text-lg font-bold">Шаги</span>
+      </section>
+      <section class="flex flex-col 2xl:col-span-2 2xl:order-3">
+        <span class="text-lg font-bold">Шаги</span>
 
-          <RadioGroup class="" :model-value="`${selectedStep}`">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead />
-                  <TableHead>Шаг k</TableHead>
-                  <TableHead>L</TableHead>
-                  <TableHead>x</TableHead>
-                  <TableHead>f(x)</TableHead>
-                  <TableHead>y</TableHead>
-                  <TableHead>f(y)</TableHead>
-                  <TableHead>z</TableHead>
-                  <TableHead>f(z)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow
-                  v-for="(range, i) in answerRanges"
-                  :key="range.toString()"
-                  :class="[i === selectedStep ? 'bg-zinc-200' : '']"
-                  class="cursor-pointer"
-                  @click="selectStep(i)"
-                >
-                  <TableCell>
-                    <RadioGroupItem :value="`${i}`" />
-                  </TableCell>
-                  <TableCell>
-                    <span>{{ i === 0 ? '-' : i - 1 }}</span>
-                  </TableCell>
-                  <TableCell>{{ range.toString() }}</TableCell>
-                  <TableCell>{{ range.middle }}</TableCell>
-                  <TableCell>{{ toRounded(f(range.middle)) }}</TableCell>
-                  <TableCell>{{ range.dots[0] }}</TableCell>
-                  <TableCell>{{ range.dots.length ? toRounded(f(range.dots[0])) : '' }}</TableCell>
-                  <TableCell>{{ range.dots[1] }}</TableCell>
-                  <TableCell>{{ range.dots.length ? toRounded(f(range.dots[1])) : '' }}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </RadioGroup>
-        </div>
-      </div>
+        <RadioGroup class="w-full " :model-value="`${selectedStep}`">
+          <Table class="overflow-x-scroll">
+            <TableHeader>
+              <TableRow>
+                <TableHead />
+                <TableHead>Шаг k</TableHead>
+                <TableHead>L</TableHead>
+                <TableHead>x</TableHead>
+                <TableHead>f(x)</TableHead>
+                <TableHead>y</TableHead>
+                <TableHead>f(y)</TableHead>
+                <TableHead>z</TableHead>
+                <TableHead>f(z)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow
+                v-for="(range, i) in answerRanges"
+                :key="range.toString()"
+                :class="[i === selectedStep ? 'bg-zinc-200' : '']"
+                class="cursor-pointer"
+                @click="selectStep(i)"
+              >
+                <TableCell>
+                  <RadioGroupItem :value="`${i}`" />
+                </TableCell>
+                <TableCell>
+                  <span>{{ i === 0 ? '-' : i - 1 }}</span>
+                </TableCell>
+                <TableCell>{{ range.toString(toRounded) }}</TableCell>
+                <TableCell>{{ toRounded(range.middle.x) }}</TableCell>
+                <TableCell>{{ toRounded(range.middle.y) }}</TableCell>
+                <TableCell>{{ range.dots?.[0].x }}</TableCell>
+                <TableCell>{{ range.dots?.[0].y }}</TableCell>
+                <TableCell>{{ range.dots?.[1].x }}</TableCell>
+                <TableCell>{{ range.dots?.[1].y }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </RadioGroup>
+      </section>
     </section>
   </main>
 </template>

@@ -15,12 +15,18 @@ export default {
   safelist: ['dark'],
 
   theme: {
+    screens: {
+      '2xl': { max: '1400px' },
+      'xl': { max: '1280px' },
+      'lg': { max: '1024px' },
+      'md': { max: '768px' },
+      'sm': { max: '640px' },
+      'xs': { max: '480px' },
+    },
     container: {
       center: true,
       padding: '2rem',
-      screens: {
-        '2xl': '1400px',
-      },
+
     },
     extend: {
       fontFamily: {

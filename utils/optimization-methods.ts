@@ -1,49 +1,70 @@
-export interface Dot {
-  x: number
-  y: number
-}
-
 export type Fn = (x: number) => number
 
-export class Range {
-  public start: number
-  public end: number
-  public dots: number[] = []
+export class Dot {
+  public x: number
+  public y: number
 
-  constructor(range: { start: number, end: number, dots?: [number, number] }) {
+  constructor(x: number, f: Fn) {
+    this.x = x
+    this.y = f(x)
+  }
+}
+
+export interface IRange {
+  start: Dot
+  end: Dot
+  dots: [Dot, Dot] | null
+}
+
+export class Range implements IRange {
+  public start: Dot
+  public end: Dot
+  public dots: [Dot, Dot] | null = null
+  private f: Fn
+
+  constructor(range: { start: Dot, end: Dot, f: Fn, dots?: [Dot, Dot] }) {
     this.start = range.start
     this.end = range.end
+    this.f = range.f
     if (range.dots)
-      this.dots = range.dots
+      this.dots = range.dots || null
   }
 
-  get width() {
-    return this.end - this.start
+  get width(): number {
+    return this.end.x - this.start.x
   }
 
-  get middle() {
-    return (this.start + this.end) / 2
+  get middle(): Dot {
+    const x = (this.start.x + this.end.x) / 2
+    const y = this.f(x)
+    return { x, y }
   }
 
-  toString() {
-    return `[${this.start};${this.end}]`
+  toString(toRounded?: Fn) {
+    if (toRounded)
+      return `[${toRounded(this.start.x)};${toRounded(this.end.x)}]`
+    return `[${this.start.x};${this.end.x}]`
   }
 }
 
 export function halfDivision(range: Range, f: Fn, toRounded: Fn): Range {
-  const fMiddle = toRounded(f(range.middle))
-  const left = toRounded(range.start + range.width / 4)
-  const right = toRounded(range.end - range.width / 4)
+  const fMid = toRounded(range.middle.y)
+  const left = toRounded(range.start.x + range.width / 4)
+  const right = toRounded(range.end.x - range.width / 4)
   const fLeft = toRounded(f(left))
   const fRight = toRounded(f(right))
-  const dots: [number, number] = [left, right]
-  if (fLeft < fMiddle) {
-    return new Range({ start: range.start, end: range.middle, dots })
+
+  const midDot = { x: range.middle.x, y: fMid }
+  const leftDot = { x: left, y: fLeft }
+  const rightDot = { x: right, y: fRight }
+  const dots: [Dot, Dot] = [leftDot, rightDot]
+  if (fLeft < fMid) {
+    return new Range({ start: range.start, end: range.middle, f, dots })
   }
   else {
-    if (fMiddle > fRight)
-      return new Range({ start: range.middle, end: range.end, dots })
-    else return new Range({ start: left, end: right, dots })
+    if (fMid > fRight)
+      return new Range({ start: midDot, end: range.end, f, dots })
+    else return new Range({ start: leftDot, end: rightDot, f, dots })
   }
 }
 
@@ -58,14 +79,17 @@ export function halfDivisionAnswer(range: Range, f: Fn, epsilon: number, toRound
 
 export function goldenRatioDivision(range: Range, f: Fn, toRounded: Fn): Range {
   const goldenRule = (3 - Math.sqrt(5)) / 2
-  const left = toRounded(range.start + goldenRule * range.width)
-  const right = toRounded(range.start + range.end - left)
+  const left = toRounded(range.start.x + goldenRule * range.width)
+  const right = toRounded(range.start.x + range.end.x - left)
   const fLeft = toRounded(f(left))
   const fRight = toRounded(f(right))
-  const dots: [number, number] = [left, right]
+
+  const leftDot = { x: left, y: fLeft }
+  const rightDot = { x: right, y: fRight }
+  const dots: [Dot, Dot] = [leftDot, rightDot]
   if (fLeft <= fRight)
-    return new Range({ start: range.start, end: right, dots })
-  else return new Range({ start: left, end: range.end })
+    return new Range({ start: range.start, end: rightDot, f, dots })
+  else return new Range({ start: leftDot, end: range.end, f, dots })
 }
 
 export function goldenRatioDivisionAnswer(range: Range, f: Fn, epsilon: number, toRounded: Fn): Range[] {
@@ -89,14 +113,16 @@ function fibonacci(n: number) {
 export const fibNums = fibonacci(100)
 
 export function fibonacciDivision(range: Range, f: Fn, n: number, k: number, toRounded: Fn): Range {
-  const left = toRounded(range.start + (fibNums[n - k - 2] / fibNums[n]) * range.width)
-  const right = toRounded(range.start + (fibNums[n - k - 1] / fibNums[n]) * range.width)
+  const left = toRounded(range.start.x + (fibNums[n - k - 2] / fibNums[n]) * range.width)
+  const right = toRounded(range.start.x + (fibNums[n - k - 1] / fibNums[n]) * range.width)
   const fLeft = toRounded(f(left))
   const fRight = toRounded(f(right))
-  const dots: [number, number] = [left, right]
+  const leftDot = { x: left, y: fLeft }
+  const rightDot = { x: right, y: fRight }
+  const dots: [Dot, Dot] = [leftDot, rightDot]
   if (fLeft <= fRight)
-    return new Range({ start: range.start, end: right, dots })
-  else return new Range({ start: left, end: range.end, dots })
+    return new Range({ start: range.start, end: rightDot, f, dots })
+  else return new Range({ start: leftDot, end: range.end, f, dots })
 }
 
 export function fibonacciDivisionAnswer(range: Range, f: Fn, epsilon: number, l: number, toRounded: Fn) {
