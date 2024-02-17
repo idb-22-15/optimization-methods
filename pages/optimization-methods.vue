@@ -17,7 +17,7 @@ import PlotFigure from '~/components/PlotFigure'
 import { Checkbox } from '~/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
-
+import { Select, SelectContent, SelectGroup, SelectItem, SelectItemText, SelectLabel, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { roundToFixed } from '~/utils/math'
 import { Dot, Range, fibonacciDivisionAnswer, goldenRatioDivisionAnswer, halfDivisionAnswer } from '~/utils/optimization-methods'
 import type { IRange } from '~/utils/optimization-methods'
@@ -137,7 +137,7 @@ const plot = computed(() =>
     labelArrow: 'none',
     // marginLeft: 65,
     height: plotRefSize.value,
-    //   width: plotWidth.value,
+    width: plotRefSize.value,
     aspectRatio: 1,
     grid: true,
     marks: [
@@ -189,10 +189,10 @@ watch(plot, (value, _old) => {
     <h1 class="text-2xl font-bold">
       Методы оптимизации
     </h1>
-    <section class="grid 2xl:grid-cols-1 grid-rows-[repeat(2,fit-content)] grid-cols-[max-content,1fr] gap-4">
-      <div ref="plotRef" class="row-span-2" role="img" />
+    <section class="grid 2xl:grid-cols-[1fr] grid-rows-[repeat(2,auto)] xl:grid-rows-[repeat(3,auto)] grid-cols-[1fr,1fr] gap-4">
+      <div ref="plotRef" class="row-span-2 2xl:row-span-1" role="img" />
       <section class="flex flex-col gap-4">
-        <Tabs v-model="selectedMethod">
+        <Tabs v-model="selectedMethod" class="2xl:hidden">
           <TabsList>
             <TabsTrigger
               v-for="method in methods"
@@ -203,80 +203,80 @@ watch(plot, (value, _old) => {
             </TabsTrigger>
           </TabsList>
         </Tabs>
-
+        <Select v-model="selectedMethod">
+          <SelectTrigger class="w-max 2xl:flex hidden">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Методы</SelectLabel>
+              <SelectItem v-for="method in methods" :key="method" :value="method">
+                {{ method }}
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
         <div class="flex flex-row gap-2 items-center">
           <h4 class="">
             Функция
           </h4>
           <fieldset class="flex gap-4 items-center">
-            <Label :class="[expr === null ? 'ring-red-500' : '']"> f(x)</Label>
-            <Input :model-value="fAsString" class="w-[300px]" type="text" placeholder="x^2 + 1" @change="s => fAsString = (s as string)" />
+            <Label> f(x)</Label>
+            <Input :model-value="fAsString" :class="[expr === null ? 'bg-red-500' : '']" class="w-[300px]" type="text" placeholder="x^2 + 1" @change="s => fAsString = (s as string)" />
           </fieldset>
         </div>
-        <div class="flex flex-row gap-8 items-center">
-          <h4 class="">
+
+        <div class="grid grid-rows-3 grid-cols-[repeat(2,max-content_1fr)] items-center 2xl:grid-cols-[max-content,1fr] gap-x-8 gap-y-2">
+          <h4 class="col-span-1">
             Интервал
           </h4>
-          <fieldset class="flex gap-4 items-center">
-            <Label for="range-start" class="text-base">От</Label>
-            <Input id="range-start" v-model="initialRange.start.x" type="number" class="w-20" name="" />
-          </fieldset>
-          <div class="flex gap-4 items-center">
-            <Label for="range-start" class="text-base">До</Label>
-            <Input id="range-end" v-model="initialRange.end.x" type="number" class="w-20" name="" />
+          <div class="grid w-max col-span-3 2xl:col-span-1 grid-cols-[1fr_1fr] gap-4 items-center">
+            <fieldset class="grid gap-2 grid-cols-[max-content_1fr] items-center">
+              <Label for="range-start" class="text-base">От</Label>
+              <Input id="range-start" v-model="initialRange.start.x" type="number" class="w-20" name="" />
+            </fieldset>
+            <fieldset class="grid gap-2 grid-cols-[max-content_1fr] items-center">
+              <Label for="range-start" class="text-base">До</Label>
+              <Input id="range-end" v-model="initialRange.end.x" type="number" class="w-20" name="" />
+            </fieldset>
           </div>
-        </div>
-        <div class="grid w-[640px] grid-rows-2 grid-cols-2 gap-x-8 gap-y-2">
-          <fieldset class="flex justify-between items-center gap-4">
-            <Label for="accuracy-epsilon" class="text-base">Точность&nbsp;&nbsp;&epsilon;</Label>
-            <Input
-              id="accuracy-epsilon"
-              v-model.number="epsilon"
-              type="number"
-              class="w-20"
-              min="0.001"
-              step="0.01"
-              max="1"
-            />
-          </fieldset>
-          <fieldset class="flex items-center justify-between gap-4">
-            <Label for="decimal-places" class="text-base">Знаков после запятой</Label>
-            <Input
-              id="decimal-places"
-              v-model.number="decimalPlaces"
-              type="number"
-              class="w-20"
-              min="2"
-              step="1"
-              max="10"
-            />
-          </fieldset>
 
-          <fieldset class="flex justify-between  items-center gap-4">
-            <Label for="count-dots" class="text-base">Количество точек</Label>
-            <Input
-              id="count-dots"
-              v-model.number="countDots"
-              type="number"
-              class="w-20"
-              min="2"
-              max="1000"
-            />
-          </fieldset>
-
-          <fieldset class="flex justify-between items-center gap-4">
-            <Label for="count-steps" class="text-base">Количество шагов</Label>
-            <Input
-              id="count-steps"
-              :value="steps"
-              disabled
-              :placeholder="steps"
-              type="number"
-              class="w-20"
-              min="2"
-              max="1000"
-            />
-          </fieldset>
+          <Label for="accuracy-epsilon" class="text-base whitespace-nowrap">Точность&nbsp;&nbsp;&epsilon;</Label>
+          <Input
+            id="accuracy-epsilon"
+            v-model.number="epsilon"
+            type="number"
+            min="0.001"
+            step="0.01"
+            max="1"
+          />
+          <Label for="decimal-places" class="text-base whitespace-nowrap">Знаков после запятой</Label>
+          <Input
+            id="decimal-places"
+            v-model.number="decimalPlaces"
+            type="number"
+            min="2"
+            step="1"
+            max="10"
+          />
+          <Label for="count-dots" class="text-base whitespace-nowrap">Количество точек</Label>
+          <Input
+            id="count-dots"
+            v-model.number="countDots"
+            type="number"
+            min="2"
+            max="1000"
+          />
+          <Label for="count-steps" class="text-base whitespace-nowrap">Количество шагов</Label>
+          <Input
+            id="count-steps"
+            :value="steps"
+            disabled
+            :placeholder="steps"
+            type="number"
+            min="2"
+            max="1000"
+          />
         </div>
       </section>
       <section class="flex flex-col 2xl:col-span-2 2xl:order-3">
