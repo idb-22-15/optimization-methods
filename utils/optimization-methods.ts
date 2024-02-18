@@ -42,8 +42,8 @@ export class Range implements IRange {
 
   toString(toRounded?: Fn) {
     if (toRounded)
-      return `[${toRounded(this.start.x)};${toRounded(this.end.x)}]`
-    return `[${this.start.x};${this.end.x}]`
+      return `[ ${toRounded(this.start.x)}, ${toRounded(this.end.x)} ]`
+    return `[ ${this.start.x}, ${this.end.x} ]`
   }
 }
 
