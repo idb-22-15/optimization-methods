@@ -27,7 +27,7 @@ import { type ExerciseVariant, exerciseVariants } from '~/assets/optimization-me
 const decimalPlaces = ref(3)
 const toRounded = (x: number) => roundToFixed(x, decimalPlaces.value)
 
-const methods = ['Метод половинного деления', 'Метод золотого сечения', 'Метод чилел Фибоначчи'] as const
+const methods = ['Метод половинного деления', 'Метод золотого сечения', 'Метод чисел Фибоначчи'] as const
 type Method = typeof methods[number]
 
 const selectedMethod = ref<Method>(methods[0])
@@ -96,7 +96,7 @@ function findAnswerRanges(range: Range): Range[] {
   switch (selectedMethod.value) {
     case 'Метод половинного деления' : return halfDivisionAnswer(range, f, epsilon.value, toRounded)
     case 'Метод золотого сечения' : return goldenRatioDivisionAnswer(range, f, epsilon.value, toRounded)
-    case 'Метод чилел Фибоначчи': return fibonacciDivisionAnswer(range, f, epsilon.value, l.value, toRounded)
+    case 'Метод чисел Фибоначчи': return fibonacciDivisionAnswer(range, f, epsilon.value, l.value, toRounded)
   }
 }
 const answerRanges = computed(() => findAnswerRanges(range2d.value))
@@ -115,15 +115,15 @@ const data = computed<Dot[]>(() =>
 const minY = computed(() => Math.min(...data.value.map(d => d.y)))
 const maxY = computed(() => Math.max(...data.value.map(d => d.y)))
 
-const slisedAreas = computed(() =>
+const slicedAreas = computed(() =>
   selectedAnswerRanges.value.map(r => makeSlicedPlotArea(range2d.value as Range, r, minY.value, maxY.value)).flat(),
 )
 
 const { width: windowWidth, height: windowHeight } = useWindowSize()
-const { width: plotRefWindth } = useElementSize(plotRef, { width: windowWidth.value, height: windowHeight.value })
+const { width: plotRefWidth } = useElementSize(plotRef, { width: windowWidth.value, height: windowHeight.value })
 
 const plotRefSize = computed(() => {
-  const height = Math.min(windowHeight.value * 0.9, plotRefWindth.value)
+  const height = Math.min(windowHeight.value * 0.9, plotRefWidth.value)
   return height
 })
 
@@ -145,7 +145,7 @@ const plot = computed(() =>
           Plot.crosshair([dot], { x: d => d.x, y: d => d.y }),
         ]),
 
-      ...slisedAreas.value,
+      ...slicedAreas.value,
 
       Plot.dot([selectedAnswerRanges.value.at(-1)!], {
         x: d => d.middle.x,
@@ -184,7 +184,7 @@ watch([selectedMethod, fString, range1d, epsilon], () => {
   selectedStep.value = steps.value
 })
 
-function setExersiseVariant(variant: ExerciseVariant) {
+function setExerciseVariant(variant: ExerciseVariant) {
   fString.value = variant.f
   range1d.value.start = variant.range[0]
   range1d.value.end = variant.range[1]
@@ -200,15 +200,15 @@ useSeoMeta({
 </script>
 
 <template>
-  <main class="px-8 mx-auto my-4 flex gap-4 flex-col">
+  <main class="mx-auto my-4 flex flex-col gap-4 px-8">
     <h1 class="text-2xl font-bold">
       Методы оптимизации
     </h1>
-    <section class="grid xl:grid-cols-[1fr] grid-rows-[repeat(2,auto)] xl:grid-rows-[repeat(3,auto)] grid-cols-[minmax(700px,1fr),1fr] gap-4">
+    <section class="grid grid-cols-[minmax(700px,1fr),1fr] grid-rows-[repeat(2,auto)] gap-4 xl:grid-cols-[1fr] xl:grid-rows-[repeat(3,auto)]">
       <section ref="plotRef" class="row-span-2 2xl:row-span-1" role="img" />
 
-      <section class="grid h-max grid-cols-[repeat(2,max-content_1fr)] items-center 2xl:grid-cols-[max-content,1fr] gap-x-8 gap-y-4">
-        <Tabs v-model="selectedMethod" class="2xl:hidden col-span-4">
+      <section class="grid h-max grid-cols-[repeat(2,max-content_1fr)] items-center gap-x-8 gap-y-4 2xl:grid-cols-[max-content,1fr]">
+        <Tabs v-model="selectedMethod" class="col-span-4 2xl:hidden">
           <TabsList>
             <TabsTrigger
               v-for="method in methods"
@@ -220,7 +220,7 @@ useSeoMeta({
           </TabsList>
         </Tabs>
         <Select v-model="selectedMethod" name="select-method">
-          <SelectTrigger class="w-max 2xl:flex 2xl:[grid-area:1/1/2/3] 2xl:-order-1 hidden">
+          <SelectTrigger class="hidden w-max 2xl:-order-1 2xl:flex 2xl:[grid-area:1/1/2/3]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -232,15 +232,15 @@ useSeoMeta({
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Label class="text-base whitespace-nowrap" for="function">Функция f(x)</Label>
+        <Label class="whitespace-nowrap text-base" for="function">Функция f(x)</Label>
         <Input id="function" class="min-w-[160px]" :model-value="fString" :class="[expr === null ? 'bg-red-100' : '']" type="text" placeholder="x^2 + 1" @change="s => fString = (s as string)" />
         <Popover>
-          <PopoverTrigger as-child class="col-span-2 2xl:justify-self-end 2xl:[grid-area:1/1/2/3] w-fit 2xl:-order-1">
+          <PopoverTrigger as-child class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]">
             <Button variant="secondary">
               Варианты
             </Button>
           </PopoverTrigger>
-          <PopoverContent class="w-full max-h-[70dvh] overflow-y-auto">
+          <PopoverContent class="max-h-[70dvh] w-full overflow-y-auto">
             <Table class="w-max">
               <TableHeader>
                 <TableRow>
@@ -251,8 +251,8 @@ useSeoMeta({
                 </TableRow>
                 <TableRow
                   v-for="v in exerciseVariants" :key="v.order" class="cursor-pointer" tabindex="0"
-                  @keypress.enter.space="setExersiseVariant(v)"
-                  @click="setExersiseVariant(v)"
+                  @keypress.enter.space="setExerciseVariant(v)"
+                  @click="setExerciseVariant(v)"
                 >
                   <TableCell>{{ v.order }}</TableCell>
                   <TableCell>{{ v.f }}</TableCell>
@@ -266,18 +266,18 @@ useSeoMeta({
         <h4 class="whitespace-nowrap">
           Интервал L<sub>0</sub>
         </h4>
-        <div class="grid w-max col-span-3 2xl:col-span-1 grid-cols-[1fr_1fr] gap-4 items-center">
-          <fieldset class="grid gap-2 grid-cols-[max-content_1fr] items-center">
+        <div class="col-span-3 grid w-max grid-cols-[1fr_1fr] items-center gap-4 2xl:col-span-1">
+          <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
             <Label for="range-start" class="text-base">От</Label>
             <Input id="range-start" v-model="range1d.start" type="number" class="w-20" name="" />
           </fieldset>
-          <fieldset class="grid gap-2 grid-cols-[max-content_1fr] items-center">
+          <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
             <Label for="range-start" class="text-base">До</Label>
             <Input id="range-end" v-model="range1d.end" type="number" class="w-20" name="" />
           </fieldset>
         </div>
 
-        <Label for="accuracy-epsilon" class="text-base whitespace-nowrap">Точность &epsilon;</Label>
+        <Label for="accuracy-epsilon" class="whitespace-nowrap text-base">Точность &epsilon;</Label>
         <Input
           id="accuracy-epsilon"
           v-model.number="epsilon"
@@ -286,7 +286,7 @@ useSeoMeta({
           step="0.01"
           max="1"
         />
-        <Label for="decimal-places" class="text-base whitespace-nowrap">Знаков после запятой</Label>
+        <Label for="decimal-places" class="whitespace-nowrap text-base">Знаков после запятой</Label>
         <Input
           id="decimal-places"
           v-model.number="decimalPlaces"
@@ -295,7 +295,7 @@ useSeoMeta({
           step="1"
           max="10"
         />
-        <Label for="count-dots" class="text-base whitespace-nowrap">Количество точек</Label>
+        <Label for="count-dots" class="whitespace-nowrap text-base">Количество точек</Label>
         <Input
           id="count-dots"
           v-model.number="countDots"
@@ -303,7 +303,7 @@ useSeoMeta({
           min="2"
           max="1000"
         />
-        <Label for="count-steps" class="text-base whitespace-nowrap">Количество шагов</Label>
+        <Label for="count-steps" class="whitespace-nowrap text-base">Количество шагов</Label>
         <Input
           id="count-steps"
           :value="steps"
