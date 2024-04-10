@@ -24,7 +24,7 @@ export default defineNuxtConfig({
     },
   },
   imports: {
-    autoImport: true,
+    autoImport: false,
     dirs: [],
   },
   components: {

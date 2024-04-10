@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { executeTransition, useElementSize, useWindowSize } from '@vueuse/core'
+import { useElementSize, useWindowSize } from '@vueuse/core'
 import * as Plot from '@observablehq/plot'
 
-import { compile, number } from 'mathjs/number'
+import { compile } from 'mathjs/number'
+import { type Ref, computed, onMounted, ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import {
@@ -13,19 +14,15 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import PlotFigure from '~/components/PlotFigure'
 import { Checkbox } from '~/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectItemText, SelectLabel, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { roundToFixed } from '~/utils/math'
-import { Dot, Range, fibonacciDivisionAnswer, goldenRatioDivisionAnswer, halfDivisionAnswer } from '~/utils/optimization-methods'
-import type { IRange } from '~/utils/optimization-methods'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
-import { type ExerciseVariant, exerciseVariants } from '~/assets/optimization-methods-variants'
+import { useHead, useSeoMeta } from '#imports'
 
-const decimalPlaces = ref(3)
-const toRounded = (x: number) => roundToFixed(x, decimalPlaces.value)
+import { type ExerciseVariant, exerciseVariants } from '~/assets/optimization-methods-variants'
+import { type Dot, type HalfDivisionStepData, type InitialXRange, type Range, fibonacciDivisionMethod, goldenRatioDivisionMethod, halfDivisionMethod } from '~/utils/main'
 
 const methods = ['Метод половинного деления', 'Метод золотого сечения', 'Метод чисел Фибоначчи'] as const
 type Method = typeof methods[number]
@@ -57,14 +54,18 @@ function f(x: number) {
   }
 }
 
-const range1d = ref({ start: -10, end: 10 })
-const range2d = computed<Range>(() =>
-  new Range({
-    start: new Dot(range1d.value.start, f),
-    end: new Dot(range1d.value.end, f),
-    f,
-  }),
-) as Ref<Range>
+const range1d = ref<InitialXRange>({ a: -10, b: 10 })
+const range2d = computed<{ start: Dot, end: Dot }>(() => ({
+  start: {
+    x: range1d.value.a,
+    fx: f(range1d.value.a),
+  },
+  end: {
+    x: range1d.value.b,
+    fx: f(range1d.value.b),
+  },
+
+}))
 
 const l = ref(0.2)
 
@@ -88,35 +89,48 @@ function makeSlicedPlotArea(initialRange: Range, range: Range, minY: number, max
   return [leftArea, rightArea]
 }
 
-const countDots = ref(100)
-
 const epsilon = ref(0.2)
 
-function findAnswerRanges(range: Range): Range[] {
+const resultData = computed(() => {
   switch (selectedMethod.value) {
-    case 'Метод половинного деления' : return halfDivisionAnswer(range, f, epsilon.value, toRounded)
-    case 'Метод золотого сечения' : return goldenRatioDivisionAnswer(range, f, epsilon.value, toRounded)
-    case 'Метод чисел Фибоначчи': return fibonacciDivisionAnswer(range, f, epsilon.value, l.value, toRounded)
+    case 'Метод половинного деления' : return halfDivisionMethod(f, range1d.value, epsilon.value)
+    case 'Метод золотого сечения' : return goldenRatioDivisionMethod(f, range1d.value, epsilon.value)
+    case 'Метод чисел Фибоначчи': return fibonacciDivisionMethod(f, range1d.value, epsilon.value, l.value)
+    default: throw new Error('no path')
   }
-}
-const answerRanges = computed(() => findAnswerRanges(range2d.value))
-const selectedStep = ref(answerRanges.value.length - 1)
-const selectedAnswerRanges = computed(() => answerRanges.value.slice(0, selectedStep.value + 1))
-const steps = computed(() => answerRanges.value.length - 1)
+})
 
-const data = computed<Dot[]>(() =>
-  Array<number>(countDots.value)
-    .fill(0)
-    .map(
-      (_, i) => range2d.value.start.x + i * (range2d.value.width / (countDots.value - 1)),
-    )
-    .map(x => ({ x, y: f(x) })),
-)
-const minY = computed(() => Math.min(...data.value.map(d => d.y)))
-const maxY = computed(() => Math.max(...data.value.map(d => d.y)))
+type Step = 'initial' | number | 'answer'
+const selectedStep = ref<Step>('answer')
+
+function createArray(start: number, end: number, countItems: number) {
+  const step = (end - start) / (countItems - 1)
+  return Array.from({ length: countItems }, (_, index) => start + index * step)
+}
+
+const selectedresultData = computed<Range[]>(() => {
+  if (selectedStep.value === 'initial')
+    return [range2d.value]
+
+  else if (selectedStep.value === 'answer')
+    return [...resultData.value.stepsData, resultData.value.ans]
+
+  else
+    return resultData.value.stepsData.slice(0, selectedStep.value + 1)
+})
+const steps = computed(() => resultData.value.stepsData.length)
+
+const COUNT_DOTS = 100
+const data = computed<Dot[]>(() => createArray(range1d.value.a, range1d.value.b, COUNT_DOTS).map(x => ({
+  x,
+  fx: f(x),
+})))
+
+const minY = computed(() => Math.min(...data.value.map(d => d.fx)))
+const maxY = computed(() => Math.max(...data.value.map(d => d.fx)))
 
 const slicedAreas = computed(() =>
-  selectedAnswerRanges.value.map(r => makeSlicedPlotArea(range2d.value as Range, r, minY.value, maxY.value)).flat(),
+  selectedresultData.value.map(r => makeSlicedPlotArea(range2d.value, r, minY.value, maxY.value)).flat(),
 )
 
 const { width: windowWidth, height: windowHeight } = useWindowSize()
@@ -126,6 +140,18 @@ const plotRefSize = computed(() => {
   const height = Math.min(windowHeight.value * 0.9, plotRefWidth.value)
   return height
 })
+
+function makeHalfDivisionMethodPlot(stepsData: HalfDivisionStepData[]): Plot.Markish[] {
+  return stepsData.map((stepData) => {
+    const yzPlots = [
+      Plot.dot([stepData.y, stepData.z], { x: 'x', y: 'fx', stroke: 'orange' }),
+      Plot.crosshair([stepData.y, stepData.z], { x: 'x', y: 'fx', stroke: 'orange' }),
+      Plot.text([stepData.y], { x: 'x', y: 'fx', text: 'y', frameAnchor: 'top', lineWidth: 3 }),
+    ]
+
+    return yzPlots
+  }).flat()
+}
 
 const plot = computed(() =>
   Plot.plot({
@@ -137,39 +163,20 @@ const plot = computed(() =>
     aspectRatio: 1,
     grid: true,
     marks: [
-      Plot.line(data.value, { x: 'x', y: 'y', stroke: 'blue', curve: 'natural' }),
-      selectedAnswerRanges.value
-        .at(-1)!
-        .dots?.map(dot => [
-          Plot.dot([dot], { x: d => d.x, y: d => d.y, stroke: 'orange' }),
-          Plot.crosshair([dot], { x: d => d.x, y: d => d.y }),
-        ]),
+      Plot.line(data.value, { x: 'x', y: 'fx', stroke: 'blue', curve: 'natural' }),
 
       ...slicedAreas.value,
-
-      Plot.dot([selectedAnswerRanges.value.at(-1)!], {
-        x: d => d.middle.x,
-        y: d => d.middle.y,
-        stroke: 'red',
-      }),
-      Plot.crosshair([selectedAnswerRanges.value.at(-1)!], {
-        x: d => d.middle.x,
-        y: d => d.middle.y,
-      }),
-      /* Plot.crosshair([answerDotData.value], { x: 'x', y: 'y' }),
-      Plot.dot([answerDotData.value], {
-        x: 'x',
-        y: 'y',
-        fill: 'red',
-      }), */
-      // Plot.frame(),
+      Plot.dot([resultData.value.ans.min], { x: 'x', y: 'fx', stroke: 'red' }),
+      Plot.crosshair([resultData.value.ans.min], { x: 'x', y: 'fx', stroke: 'red' }),
+      selectedMethod.value === 'Метод половинного деления' ? makeHalfDivisionMethodPlot(resultData.value.stepsData) : [],
     ],
   }),
 )
-// const plotWidth = ref(window.innerWidth)
 
 onMounted(() => {
-  plotRef.value!.appendChild(plot.value)
+  if (plotRef.value)
+    plotRef.value.appendChild(plot.value)
+  else console.warn('No plotRef')
 })
 
 watch(plot, (value, _old) => {
@@ -177,25 +184,26 @@ watch(plot, (value, _old) => {
   plotRef.value?.appendChild(value)
 })
 
-function selectStep(step: number) {
+function selectStep(step: Step) {
   selectedStep.value = step
 }
+
 watch([selectedMethod, fString, range1d, epsilon], () => {
-  selectedStep.value = steps.value
+  selectedStep.value = 'answer'
 })
 
 function setExerciseVariant(variant: ExerciseVariant) {
   fString.value = variant.f
-  range1d.value.start = variant.range[0]
-  range1d.value.end = variant.range[1]
+  range1d.value.a = variant.range[0]
+  range1d.value.b = variant.range[1]
   epsilon.value = variant.epsilon
 }
 
 useSeoMeta({
   title: 'Методы оптимизации',
-  description: 'Методы оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фиббоначи',
+  description: 'Методы оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фибоначчи',
   ogTitle: 'Методы оптимизации',
-  ogDescription: 'Методы оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фиббоначи',
+  ogDescription: 'Методы оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фибоначчи',
 })
 </script>
 
@@ -233,7 +241,14 @@ useSeoMeta({
           </SelectContent>
         </Select>
         <Label class="whitespace-nowrap text-base" for="function">Функция f(x)</Label>
-        <Input id="function" class="min-w-[160px]" :model-value="fString" :class="[expr === null ? 'bg-red-100' : '']" type="text" placeholder="x^2 + 1" @change="s => fString = (s as string)" />
+        <Input
+          id="function" class="min-w-[160px]"
+          :model-value="fString"
+          :class="[expr === null ? 'bg-red-100' : '']"
+          type="text"
+          placeholder="x^2 + 1"
+          @change="(s: string) => fString = s"
+        />
         <Popover>
           <PopoverTrigger as-child class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]">
             <Button variant="secondary">
@@ -250,14 +265,14 @@ useSeoMeta({
                   <TableHead>&epsilon;</TableHead>
                 </TableRow>
                 <TableRow
-                  v-for="v in exerciseVariants" :key="v.order" class="cursor-pointer" tabindex="0"
-                  @keypress.enter.space="setExerciseVariant(v)"
-                  @click="setExerciseVariant(v)"
+                  v-for="variant in exerciseVariants" :key="variant.order" class="cursor-pointer" tabindex="0"
+                  @keypress.enter.space="setExerciseVariant(variant)"
+                  @click="setExerciseVariant(variant)"
                 >
-                  <TableCell>{{ v.order }}</TableCell>
-                  <TableCell>{{ v.f }}</TableCell>
-                  <TableCell>{{ v.range }}</TableCell>
-                  <TableCell>{{ v.epsilon }}</TableCell>
+                  <TableCell>{{ variant.order }}</TableCell>
+                  <TableCell>{{ variant.f }}</TableCell>
+                  <TableCell>{{ variant.range }}</TableCell>
+                  <TableCell>{{ variant.epsilon }}</TableCell>
                 </TableRow>
               </TableHeader>
             </Table>
@@ -269,11 +284,11 @@ useSeoMeta({
         <div class="col-span-3 grid w-max grid-cols-[1fr_1fr] items-center gap-4 2xl:col-span-1">
           <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
             <Label for="range-start" class="text-base">От</Label>
-            <Input id="range-start" v-model="range1d.start" type="number" class="w-20" name="" />
+            <!-- <Input id="range-start" v-model="range1d.a" type="number" class="w-20" name="" /> -->
           </fieldset>
           <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
             <Label for="range-start" class="text-base">До</Label>
-            <Input id="range-end" v-model="range1d.end" type="number" class="w-20" name="" />
+            <!-- <Input id="range-end" v-model="range1d.b" type="number" class="w-20" name="" /> -->
           </fieldset>
         </div>
 
@@ -286,7 +301,7 @@ useSeoMeta({
           step="0.01"
           max="1"
         />
-        <Label for="decimal-places" class="whitespace-nowrap text-base">Знаков после запятой</Label>
+        <!--   <Label for="decimal-places" class="whitespace-nowrap text-base">Знаков после запятой</Label>
         <Input
           id="decimal-places"
           v-model.number="decimalPlaces"
@@ -294,15 +309,8 @@ useSeoMeta({
           min="2"
           step="1"
           max="10"
-        />
-        <Label for="count-dots" class="whitespace-nowrap text-base">Количество точек</Label>
-        <Input
-          id="count-dots"
-          v-model.number="countDots"
-          type="number"
-          min="2"
-          max="1000"
-        />
+        /> -->
+
         <Label for="count-steps" class="whitespace-nowrap text-base">Количество шагов</Label>
         <Input
           id="count-steps"
@@ -334,26 +342,43 @@ useSeoMeta({
               </TableRow>
             </TableHeader>
             <TableBody>
+              <TableRow class="cursor-pointer whitespace-nowrap" @click="selectStep('initial')">
+                <TableCell><RadioGroupItem value="initial" /></TableCell>
+                <TableCell>Старт</TableCell>
+                <TableCell>[{{ range1d.a }}, {{ range1d.b }}]</TableCell>
+                <TableCell />
+                <TableCell />
+                <TableCell />
+                <TableCell />
+                <TableCell />
+              </TableRow>
               <TableRow
-                v-for="(range, i) in answerRanges"
-                :key="range.toString()"
+                v-for="(stepData, i) in resultData.stepsData"
+                :key="stepData.toString()"
                 :class="[i === selectedStep ? 'bg-zinc-200' : '']"
                 class="cursor-pointer whitespace-nowrap"
                 @click="selectStep(i)"
               >
-                <TableCell>
-                  <RadioGroupItem :value="`${i}`" />
-                </TableCell>
-                <TableCell>
-                  <span>{{ i === 0 ? '-' : i - 1 }}</span>
-                </TableCell>
-                <TableCell>{{ range.toString(toRounded) }}</TableCell>
-                <TableCell>{{ toRounded(range.middle.x) }}</TableCell>
-                <TableCell>{{ toRounded(range.middle.y) }}</TableCell>
-                <TableCell>{{ range.dots?.[0].x }}</TableCell>
-                <TableCell>{{ range.dots?.[0].y }}</TableCell>
-                <TableCell>{{ range.dots?.[1].x }}</TableCell>
-                <TableCell>{{ range.dots?.[1].y }}</TableCell>
+                <TableCell><RadioGroupItem :value="`${i}`" /></TableCell>
+                <TableCell>{{ stepData.step }}</TableCell>
+                <TableCell>[{{ stepData.start.x }}, {{ stepData.end.x }}]</TableCell>
+                <TableCell />
+                <TableCell />
+                <TableCell>{{ stepData.y.x }}</TableCell>
+                <TableCell>{{ stepData.y.fx }}</TableCell>
+                <TableCell>{{ stepData.z.x }}</TableCell>
+                <TableCell>{{ stepData.z.fx }}</TableCell>
+              </TableRow>
+              <TableRow class="cursor-pointer whitespace-nowrap" @click="selectStep('answer')">
+                <TableCell><RadioGroupItem value="answer" /></TableCell>
+                <TableCell>Результат</TableCell>
+                <TableCell>[{{ resultData.ans.start.x }}, {{ resultData.ans.end.x }}]</TableCell>
+                <TableCell>{{ resultData.ans.min.x }}</TableCell>
+                <TableCell>{{ resultData.ans.min.fx }}</TableCell>
+                <TableCell>{{ }}</TableCell>
+                <TableCell>{{ }}</TableCell>
+                <TableCell>{{ }}</TableCell>
+                <TableCell>{{ }}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
