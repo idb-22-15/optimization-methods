@@ -341,17 +341,26 @@ useSeoMeta({
       </section>
 
       <section class="flex flex-col 2xl:col-span-2 xl:col-span-1">
-        <span class="font-bold">Шаги</span>
-
         <RadioGroup class="w-full" :model-value="`${selectedStep}`">
           <Table class="overflow-x-scroll">
             <TableHeader>
               <TableRow>
-                <TableHead />
+                <TableHead>Старт</TableHead>
+                <TableHead>L</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow @click="selectStep('initial')">
+                <TableCell><RadioGroupItem value="initial" /></TableCell>
+                <TableCell>[{{ range1d.a }}, {{ range1d.b }}]</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+          <Table class="overflow-x-scroll">
+            <TableHeader>
+              <TableRow>
                 <TableHead>Шаг k</TableHead>
                 <TableHead>L</TableHead>
-                <TableHead>x</TableHead>
-                <TableHead>f(x)</TableHead>
                 <TableHead>y</TableHead>
                 <TableHead>f(y)</TableHead>
                 <TableHead>z</TableHead>
@@ -359,16 +368,6 @@ useSeoMeta({
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow class="cursor-pointer whitespace-nowrap" @click="selectStep('initial')">
-                <TableCell><RadioGroupItem value="initial" /></TableCell>
-                <TableCell>Старт</TableCell>
-                <TableCell>[{{ range1d.a }}, {{ range1d.b }}]</TableCell>
-                <TableCell />
-                <TableCell />
-                <TableCell />
-                <TableCell />
-                <TableCell />
-              </TableRow>
               <TableRow
                 v-for="(stepData, i) in resultData.stepsData"
                 :key="stepData.toString()"
@@ -376,26 +375,33 @@ useSeoMeta({
                 class="cursor-pointer whitespace-nowrap"
                 @click="selectStep(i)"
               >
-                <TableCell><RadioGroupItem :value="`${i}`" /></TableCell>
-                <TableCell>{{ stepData.step }}</TableCell>
+                <TableCell class="space-x-4">
+                  <RadioGroupItem :id="`step-${i}`" :value="`${i}`" />
+                  <Label :for="`step-${i}`">{{ stepData.step }}</Label>
+                </TableCell>
                 <TableCell>[{{ stepData.start.x }}, {{ stepData.end.x }}]</TableCell>
-                <TableCell />
-                <TableCell />
                 <TableCell>{{ stepData.y.x }}</TableCell>
                 <TableCell>{{ stepData.y.fx }}</TableCell>
                 <TableCell>{{ stepData.z.x }}</TableCell>
                 <TableCell>{{ stepData.z.fx }}</TableCell>
               </TableRow>
-              <TableRow class="cursor-pointer whitespace-nowrap" @click="selectStep('answer')">
+            </TableBody>
+          </Table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Результат</TableHead>
+                <TableHead>L</TableHead>
+                <TableHead>x</TableHead>
+                <TableHead>f(x)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow @click="selectStep('answer')">
                 <TableCell><RadioGroupItem value="answer" /></TableCell>
-                <TableCell>Результат</TableCell>
                 <TableCell>[{{ resultData.ans.start.x }}, {{ resultData.ans.end.x }}]</TableCell>
                 <TableCell>{{ resultData.ans.min.x }}</TableCell>
                 <TableCell>{{ resultData.ans.min.fx }}</TableCell>
-                <TableCell>{{ }}</TableCell>
-                <TableCell>{{ }}</TableCell>
-                <TableCell>{{ }}</TableCell>
-                <TableCell>{{ }}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
