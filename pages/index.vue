@@ -338,7 +338,7 @@ useSeoMeta({
         />
       </section>
 
-      <section class="flex flex-col 2xl:col-span-2 xl:col-span-1">
+      <section class="flex flex-col whitespace-nowrap 2xl:col-span-2 xl:col-span-1">
         <RadioGroup class="w-full" :model-value="`${selectedStep}`">
           <Table class="overflow-x-scroll">
             <TableHeader>
@@ -348,7 +348,10 @@ useSeoMeta({
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow @click="selectStep('initial')">
+              <TableRow
+                class="cursor-pointer"
+                @click="selectStep('initial')"
+              >
                 <TableCell><RadioGroupItem value="initial" /></TableCell>
                 <TableCell>[{{ range1d.a }}, {{ range1d.b }}]</TableCell>
               </TableRow>
@@ -371,7 +374,7 @@ useSeoMeta({
                 v-for="(stepData, i) in resultData.stepsData"
                 :key="stepData.toString()"
                 :class="[i === selectedStep ? 'bg-zinc-200' : '']"
-                class="cursor-pointer whitespace-nowrap"
+                class="cursor-pointer"
                 @click="selectStep(i)"
               >
                 <TableCell class="space-x-4">
@@ -397,7 +400,10 @@ useSeoMeta({
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow @click="selectStep('answer')">
+              <TableRow
+                class="cursor-pointer"
+                @click="selectStep('answer')"
+              >
                 <TableCell><RadioGroupItem value="answer" /></TableCell>
                 <TableCell>[{{ resultData.ans.start.x }}, {{ resultData.ans.end.x }}]</TableCell>
                 <TableCell>{{ resultData.ans.min.x }}</TableCell>
