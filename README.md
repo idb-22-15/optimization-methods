@@ -11,3 +11,5 @@
 - `nuxt` для ssr
 - `nuxt/seo` для `og:image`
 - `mathjs` для парсинга функции, заданной пользователем
+
+![screen](./public/screen.png)
