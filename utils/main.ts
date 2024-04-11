@@ -242,30 +242,30 @@ export function goldenRatioDivisionMethod(f: Fx, L0: InitialXRange, epsilon: num
   }
 }
 
-export function fibonacciDivisionMethod(f: Fx, L0: InitialXRange, epsilon: number, l: number) {
+export function fibonacciDivisionMethod2(f: Fx, interval: InitialXRange, epsilon: number) {
   logger.log(`fibonacciDivisionMethod`)
   const stepsData: FibonacciDivisionStepData[] = []
   // step 1
   // L0, epsilon, l
 
-  let L = L0
+  let L = interval
 
   // step 2
   const LLen = L.b - L.a
   const findN = () => {
-    let N = 0
-    while (!(fibNumbers[N] >= LLen / l)) N++
-    return N
+    let n = 0
+    while (!(fibNumbers[n] >= LLen / epsilon)) n++
+    return n
   }
-  const N = findN()
-  logger.log(`N: ${N}`)
+  const n = findN()
+  logger.log(`N: ${n}`)
   // step 3
   let k = 0
 
   while (true) {
     // step 4
-    const y = L.a + (fibNumbers[N - k - 2] / fibNumbers[N]) * LLen
-    const z = L.a + (fibNumbers[N - k - 1] / fibNumbers[N]) * LLen
+    const y = L.a + (fibNumbers[n - k - 2] / fibNumbers[n]) * LLen
+    const z = L.a + (fibNumbers[n - k] / fibNumbers[n]) * LLen
 
     // step 5
 
@@ -311,7 +311,7 @@ export function fibonacciDivisionMethod(f: Fx, L0: InitialXRange, epsilon: numbe
     // step 7
 
     // 7a
-    if (k !== N - 3) {
+    if (k !== n - 3) {
       k++
       L = {
         a: aNext,
@@ -404,5 +404,84 @@ export function fibonacciDivisionMethod(f: Fx, L0: InitialXRange, epsilon: numbe
         ans,
       }
     }
+  }
+}
+
+export function fibonacciDivisionMethod(f: Fx, interval: InitialXRange, epsilon: number) {
+  logger.log(`fibonacciDivisionMethod`)
+  const stepsData: FibonacciDivisionStepData[] = []
+
+  let n = 2
+  while ((interval.b - interval.a) / epsilon > fibNumbers[n - 1]) n++
+
+  let a = interval.a
+  let b = interval.b
+  let y = a + (fibNumbers[n - 2] / fibNumbers[n]) * (b - a)
+  let z = a + (fibNumbers[n - 1] / fibNumbers[n]) * (b - a)
+  let fy = f(y)
+  let fz = f(z)
+  let k = 0
+
+  while (Math.abs(b - a) > epsilon) {
+    if (fy < fz) {
+      b = z
+      z = y
+      fz = fy
+      y = a + (fibNumbers[n - k - 3] / fibNumbers[n - k - 1]) * (b - a)
+      fy = f(y)
+    }
+    else {
+      a = y
+      y = z
+      fy = fz
+      z = a + (fibNumbers[n - k - 2] / fibNumbers[n - k - 1]) * (b - a)
+      fz = f(z)
+    }
+    const stepData: FibonacciDivisionStepData = {
+      start: {
+        x: a,
+        fx: f(a),
+      },
+      end: {
+        x: b,
+        fx: f(b),
+      },
+      y: {
+        x: y,
+        fx: f(y),
+      },
+      z: {
+        x: z,
+        fx: f(z),
+      },
+      step: k,
+    }
+
+    logger.log(`k: ${stepData.step}, a: ${stepData.start.x}, b: ${stepData.end.x}, y: ${stepData.y.x}, z: ${stepData.z.x}`)
+    stepsData.push(stepData)
+    k++
+  }
+
+  const minX = (a + b) / 2
+
+  const ans: AnswerData = {
+    start: {
+      x: a,
+      fx: f(a),
+    },
+    end: {
+      x: b,
+      fx: f(b),
+    },
+    min: {
+      x: minX,
+      fx: f(minX),
+    },
+    step: k,
+  }
+
+  return {
+    stepsData,
+    ans,
   }
 }

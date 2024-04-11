@@ -31,6 +31,7 @@ export default defineNuxtConfig({
     dirs: [],
   },
   site: {
-    url: 'http://biplane-design.com',
+    name: 'Методы оптимизации',
+    url: 'http://optimization-methods.biplane-design.com',
   },
 })

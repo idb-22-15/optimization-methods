@@ -69,8 +69,6 @@ const range2d = computed<{ start: Dot, end: Dot }>(() => ({
 
 }))
 
-const l = ref(0.2)
-
 function makeSlicedPlotArea(initialRange: Range, range: Range, minY: number, maxY: number): [Plot.Area, Plot.Area] {
   const leftArea = Plot.areaX(
     [
@@ -100,7 +98,7 @@ const resultData = computed<{
   switch (selectedMethod.value) {
     case 'Метод половинного деления' : return halfDivisionMethod(f, range1d.value, epsilon.value)
     case 'Метод золотого сечения' : return goldenRatioDivisionMethod(f, range1d.value, epsilon.value)
-    case 'Метод чисел Фибоначчи': return fibonacciDivisionMethod(f, range1d.value, epsilon.value, l.value)
+    case 'Метод чисел Фибоначчи': return fibonacciDivisionMethod(f, range1d.value, epsilon.value)
     default: throw new Error('no path')
   }
 })
@@ -360,7 +358,8 @@ useSeoMeta({
             <TableHeader>
               <TableRow>
                 <TableHead>Шаг k</TableHead>
-                <TableHead>L</TableHead>
+                <TableHead>a</TableHead>
+                <TableHead>b</TableHead>
                 <TableHead>y</TableHead>
                 <TableHead>f(y)</TableHead>
                 <TableHead>z</TableHead>
@@ -379,7 +378,8 @@ useSeoMeta({
                   <RadioGroupItem :id="`step-${i}`" :value="`${i}`" />
                   <Label :for="`step-${i}`">{{ stepData.step }}</Label>
                 </TableCell>
-                <TableCell>[{{ stepData.start.x }}, {{ stepData.end.x }}]</TableCell>
+                <TableCell>{{ stepData.start.x }}</TableCell>
+                <TableCell>{{ stepData.end.x }}</TableCell>
                 <TableCell>{{ stepData.y.x }}</TableCell>
                 <TableCell>{{ stepData.y.fx }}</TableCell>
                 <TableCell>{{ stepData.z.x }}</TableCell>
