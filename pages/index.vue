@@ -3,7 +3,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
 import * as Plot from '@observablehq/plot'
 
 import { compile } from 'mathjs/number'
-import { type Ref, computed, onMounted, ref, watch } from 'vue'
+// import { type Ref, computed, onMounted, ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import {
@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectItemText, SelectLabel, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
-import { defineOgImageComponent, useHead, useSeoMeta } from '#imports'
+// import { defineOgImageComponent, useHead, useSeoMeta } from '#imports'
 
 import { type ExerciseVariant, exerciseVariants } from '~/assets/optimization-methods-variants'
 import { type AnswerData, type Dot, type FibonacciDivisionStepData, type GoldenRatioDivisionStepData, type HalfDivisionStepData, type InitialXRange, type Range, type YZDots, fibonacciDivisionMethod, goldenRatioDivisionMethod, halfDivisionMethod } from '~/utils/main'
