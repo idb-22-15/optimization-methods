@@ -22,7 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover
 import { useHead, useSeoMeta } from '#imports'
 
 import { type ExerciseVariant, exerciseVariants } from '~/assets/optimization-methods-variants'
-import { type Dot, type HalfDivisionStepData, type InitialXRange, type Range, fibonacciDivisionMethod, goldenRatioDivisionMethod, halfDivisionMethod } from '~/utils/main'
+import { type AnswerData, type Dot, type FibonacciDivisionStepData, type GoldenRatioDivisionStepData, type HalfDivisionStepData, type InitialXRange, type Range, type YZDots, fibonacciDivisionMethod, goldenRatioDivisionMethod, halfDivisionMethod } from '~/utils/main'
 
 const methods = ['Метод половинного деления', 'Метод золотого сечения', 'Метод чисел Фибоначчи'] as const
 type Method = typeof methods[number]
@@ -91,7 +91,10 @@ function makeSlicedPlotArea(initialRange: Range, range: Range, minY: number, max
 
 const epsilon = ref(0.2)
 
-const resultData = computed(() => {
+const resultData = computed<{
+  ans: AnswerData
+  stepsData: HalfDivisionStepData[] | GoldenRatioDivisionStepData[] | FibonacciDivisionStepData[]
+}>(() => {
   switch (selectedMethod.value) {
     case 'Метод половинного деления' : return halfDivisionMethod(f, range1d.value, epsilon.value)
     case 'Метод золотого сечения' : return goldenRatioDivisionMethod(f, range1d.value, epsilon.value)
@@ -99,6 +102,10 @@ const resultData = computed(() => {
     default: throw new Error('no path')
   }
 })
+
+// const halfDivisionMethodResultData = computed(() => halfDivisionMethod(f, range1d.value, epsilon.value))
+// const goldenRatioDivisionMethodResultData = computed(() => goldenRatioDivisionMethod(f, range1d.value, epsilon.value))
+// const fibonacciDivisionMethodResultData = computed(() => fibonacciDivisionMethod(f, range1d.value, epsilon.value, l.value))
 
 type Step = 'initial' | number | 'answer'
 const selectedStep = ref<Step>('answer')
@@ -108,7 +115,7 @@ function createArray(start: number, end: number, countItems: number) {
   return Array.from({ length: countItems }, (_, index) => start + index * step)
 }
 
-const selectedresultData = computed<Range[]>(() => {
+const selectedResultData = computed<Range[]>(() => {
   if (selectedStep.value === 'initial')
     return [range2d.value]
 
@@ -130,7 +137,7 @@ const minY = computed(() => Math.min(...data.value.map(d => d.fx)))
 const maxY = computed(() => Math.max(...data.value.map(d => d.fx)))
 
 const slicedAreas = computed(() =>
-  selectedresultData.value.map(r => makeSlicedPlotArea(range2d.value, r, minY.value, maxY.value)).flat(),
+  selectedResultData.value.map(r => makeSlicedPlotArea(range2d.value, r, minY.value, maxY.value)).flat(),
 )
 
 const { width: windowWidth, height: windowHeight } = useWindowSize()
@@ -141,17 +148,29 @@ const plotRefSize = computed(() => {
   return height
 })
 
-function makeHalfDivisionMethodPlot(stepsData: HalfDivisionStepData[]): Plot.Markish[] {
-  return stepsData.map((stepData) => {
-    const yzPlots = [
-      Plot.dot([stepData.y, stepData.z], { x: 'x', y: 'fx', stroke: 'orange' }),
-      Plot.crosshair([stepData.y, stepData.z], { x: 'x', y: 'fx', stroke: 'orange' }),
-      Plot.text([stepData.y], { x: 'x', y: 'fx', text: 'y', frameAnchor: 'top', lineWidth: 3 }),
-    ]
+function makeYZPlots(stepsData: YZDots[], step: Step): Plot.Markish[] {
+  if (typeof step !== 'number')
+    return []
 
-    return yzPlots
-  }).flat()
+  const selectedStepData = stepsData.at(step)
+  if (!selectedStepData)
+    return []
+
+  const yzPlots = [
+    Plot.dot([selectedStepData.y, selectedStepData.z], { x: 'x', y: 'fx', stroke: 'blue' }),
+    Plot.crosshair([selectedStepData.y, selectedStepData.z], { x: 'x', y: 'fx', stroke: 'blue' }),
+    Plot.text([selectedStepData.y], { x: 'x', y: 'fx', text: () => 'y', dy: -20, fontSize: 16, lineAnchor: 'bottom' }),
+    Plot.text([selectedStepData.z], { x: 'x', y: 'fx', text: () => 'z', dy: -20, fontSize: 16, lineAnchor: 'bottom' }),
+  ]
+  return yzPlots
 }
+
+const yzPlots = computed(() => makeYZPlots(resultData.value.stepsData, selectedStep.value))
+
+const answerPlot = computed(() => [
+  Plot.dot([resultData.value.ans.min], { x: 'x', y: 'fx', stroke: 'red' }),
+  Plot.crosshair([resultData.value.ans.min], { x: 'x', y: 'fx', stroke: 'red' }),
+])
 
 const plot = computed(() =>
   Plot.plot({
@@ -164,11 +183,9 @@ const plot = computed(() =>
     grid: true,
     marks: [
       Plot.line(data.value, { x: 'x', y: 'fx', stroke: 'blue', curve: 'natural' }),
-
-      ...slicedAreas.value,
-      Plot.dot([resultData.value.ans.min], { x: 'x', y: 'fx', stroke: 'red' }),
-      Plot.crosshair([resultData.value.ans.min], { x: 'x', y: 'fx', stroke: 'red' }),
-      selectedMethod.value === 'Метод половинного деления' ? makeHalfDivisionMethodPlot(resultData.value.stepsData) : [],
+      slicedAreas.value,
+      answerPlot.value,
+      yzPlots.value,
     ],
   }),
 )
@@ -247,7 +264,7 @@ useSeoMeta({
           :class="[expr === null ? 'bg-red-100' : '']"
           type="text"
           placeholder="x^2 + 1"
-          @change="(s: string) => fString = s"
+          @change="fString = ($event.target as HTMLInputElement).value"
         />
         <Popover>
           <PopoverTrigger as-child class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]">
@@ -284,11 +301,11 @@ useSeoMeta({
         <div class="col-span-3 grid w-max grid-cols-[1fr_1fr] items-center gap-4 2xl:col-span-1">
           <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
             <Label for="range-start" class="text-base">От</Label>
-            <!-- <Input id="range-start" v-model="range1d.a" type="number" class="w-20" name="" /> -->
+            <Input id="range-start" v-model="range1d.a" type="number" class="w-20" name="" />
           </fieldset>
           <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
             <Label for="range-start" class="text-base">До</Label>
-            <!-- <Input id="range-end" v-model="range1d.b" type="number" class="w-20" name="" /> -->
+            <Input id="range-end" v-model="range1d.b" type="number" class="w-20" name="" />
           </fieldset>
         </div>
 

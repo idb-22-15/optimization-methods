@@ -18,7 +18,12 @@ export interface Range {
   end: Dot
 }
 
-export interface HalfDivisionStepData extends Range {
+export interface YZDots {
+  y: Dot
+  z: Dot
+}
+
+export interface HalfDivisionStepData extends Range, YZDots {
   start: Dot
   center: Dot
   end: Dot
@@ -27,7 +32,7 @@ export interface HalfDivisionStepData extends Range {
   step: number
 }
 
-export interface GoldenRatioDivisionStepData extends Range {
+export interface GoldenRatioDivisionStepData extends Range, YZDots {
   start: Dot
   end: Dot
   y: Dot
@@ -35,7 +40,7 @@ export interface GoldenRatioDivisionStepData extends Range {
   step: number
 }
 
-export interface FibonacciDivisionStepData extends Range {
+export interface FibonacciDivisionStepData extends Range, YZDots {
   start: Dot
   end: Dot
   y: Dot
