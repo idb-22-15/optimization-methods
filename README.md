@@ -6,7 +6,8 @@
 - Метод чисел Фибоначчи
 
 ### Стек
-- `shadcn-vue`
-- `observable plot` для создания графиков
+- `shadcn-vue` для ui
+- `@observablehq/plot` для создания графиков
 - `nuxt` для ssr
+- `nuxt/seo` для `og:image`
 - `mathjs` для парсинга функции, заданной пользователем

@@ -1,7 +1,7 @@
 import '@total-typescript/ts-reset'
 
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
   css: ['~/assets/index.css'],
   devtools: { enabled: true },
   modules: [
@@ -29,5 +29,8 @@ export default defineNuxtConfig({
   },
   components: {
     dirs: [],
+  },
+  site: {
+    url: 'http://biplane-design.com',
   },
 })
