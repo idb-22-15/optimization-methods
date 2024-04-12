@@ -423,20 +423,6 @@ export function fibonacciDivisionMethod(f: Fx, interval: InitialXRange, epsilon:
   let k = 0
 
   while (Math.abs(b - a) > epsilon) {
-    if (fy < fz) {
-      b = z
-      z = y
-      fz = fy
-      y = a + (fibNumbers[n - k - 3] / fibNumbers[n - k - 1]) * (b - a)
-      fy = f(y)
-    }
-    else {
-      a = y
-      y = z
-      fy = fz
-      z = a + (fibNumbers[n - k - 2] / fibNumbers[n - k - 1]) * (b - a)
-      fz = f(z)
-    }
     const stepData: FibonacciDivisionStepData = {
       start: {
         x: a,
@@ -456,9 +442,24 @@ export function fibonacciDivisionMethod(f: Fx, interval: InitialXRange, epsilon:
       },
       step: k,
     }
-
     logger.log(`k: ${stepData.step}, a: ${stepData.start.x}, b: ${stepData.end.x}, y: ${stepData.y.x}, z: ${stepData.z.x}`)
     stepsData.push(stepData)
+
+    if (fy < fz) {
+      b = z
+      z = y
+      fz = fy
+      y = a + (fibNumbers[n - k - 3] / fibNumbers[n - k - 1]) * (b - a)
+      fy = f(y)
+    }
+    else {
+      a = y
+      y = z
+      fy = fz
+      z = a + (fibNumbers[n - k - 2] / fibNumbers[n - k - 1]) * (b - a)
+      fz = f(z)
+    }
+
     k++
   }
 

@@ -3,7 +3,7 @@ import '@total-typescript/ts-reset'
 export default defineNuxtConfig({
   ssr: true,
   css: ['~/assets/index.css'],
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   modules: [
     '@nuxtjs/google-fonts',
     '@nuxtjs/tailwindcss',
