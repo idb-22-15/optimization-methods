@@ -344,7 +344,7 @@ useSeoMeta({
             <TableHeader>
               <TableRow>
                 <TableHead>Старт</TableHead>
-                <TableHead>L</TableHead>
+                <TableHead>L<sub>0</sub></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
