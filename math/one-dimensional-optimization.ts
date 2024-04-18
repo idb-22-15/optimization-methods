@@ -1,5 +1,5 @@
-import { fibNumbers } from './fibonacci'
-import { logger } from './logger'
+import { fib } from '../utils/fibonacci'
+import { logger } from '../utils/logger'
 
 export type Fx = (x: number) => number
 
@@ -254,7 +254,7 @@ export function fibonacciDivisionMethod2(f: Fx, interval: InitialXRange, epsilon
   const LLen = L.b - L.a
   const findN = () => {
     let n = 0
-    while (!(fibNumbers[n] >= LLen / epsilon)) n++
+    while (!(fib[n] >= LLen / epsilon)) n++
     return n
   }
   const n = Math.max(2, findN())
@@ -262,35 +262,35 @@ export function fibonacciDivisionMethod2(f: Fx, interval: InitialXRange, epsilon
   // step 3
   let k = 0
 
-  const y = L.a + (fibNumbers[n - 2] / fibNumbers[n]) * LLen
-  const z = L.a + (fibNumbers[n - 1] / fibNumbers[n]) * LLen
+  const y = L.a + (fib[n - 2] / fib[n]) * LLen
+  const z = L.a + (fib[n - 1] / fib[n]) * LLen
 
   const firstStepData: FibonacciDivisionStepData = {
     start: {
       x: L.a,
-      fx: f(L.a)
+      fx: f(L.a),
     },
     end: {
       x: L.b,
-      fx: f(L.b)
+      fx: f(L.b),
     },
     step: 0,
     y: {
       x: y,
-      fx: f(y)
+      fx: f(y),
     },
-    z : {
+    z: {
       x: z,
-      fx: f(z)
-    }
+      fx: f(z),
+    },
   }
   stepsData.push(firstStepData)
-  k++;
+  k++
 
   while (k <= n - 3) {
     // step 4
-    const y = L.a + (fibNumbers[n - k - 2] / fibNumbers[n]) * LLen
-    const z = L.a + (fibNumbers[n - k] / fibNumbers[n]) * LLen
+    const y = L.a + (fib[n - k - 2] / fib[n]) * LLen
+    const z = L.a + (fib[n - k] / fib[n]) * LLen
 
     // step 5
 
@@ -342,95 +342,91 @@ export function fibonacciDivisionMethod2(f: Fx, interval: InitialXRange, epsilon
       b: bNext,
     }
     // 7b
-
   }
 
-  
-    const zNMinus2 = (L.a + L.b) / 2
-    const yNMinus2 = zNMinus2
+  const zNMinus2 = (L.a + L.b) / 2
+  const yNMinus2 = zNMinus2
 
-    const yNMinus1 = yNMinus2
-    const zNMinus1 = yNMinus1 + epsilon
+  const yNMinus1 = yNMinus2
+  const zNMinus1 = yNMinus1 + epsilon
 
-    let aNMinus1: number = null!
-    let bNMinus1: number = null!
-    if (f(yNMinus1) <= f(zNMinus1)) {
-      aNMinus1 = L.a
-      bNMinus1 = zNMinus1
-    }
-    else {
-      aNMinus1 = yNMinus1
-      bNMinus1 = L.b
-    }
+  let aNMinus1: number = null!
+  let bNMinus1: number = null!
+  if (f(yNMinus1) <= f(zNMinus1)) {
+    aNMinus1 = L.a
+    bNMinus1 = zNMinus1
+  }
+  else {
+    aNMinus1 = yNMinus1
+    bNMinus1 = L.b
+  }
 
-    const NMinus2StepData: FibonacciDivisionStepData = {
-      start: {
-        x: L.a,
-        fx: f(L.a),
-      },
-      end: {
-        x: L.b,
-        fx: f(L.b),
-      },
-      y: {
-        x: yNMinus2,
-        fx: f(yNMinus2),
-      },
-      z: {
-        x: zNMinus2,
-        fx: f(zNMinus2),
-      },
-      step: k + 1,
-    }
-    const NMinus1StepData: FibonacciDivisionStepData = {
-      start: {
-        x: aNMinus1,
-        fx: f(aNMinus1),
-      },
-      end: {
-        x: bNMinus1,
-        fx: f(bNMinus1),
-      },
-      y: {
-        x: yNMinus1,
-        fx: f(yNMinus1),
-      },
-      z: {
-        x: zNMinus1,
-        fx: f(zNMinus1),
-      },
-      step: k + 2,
-    }
+  const NMinus2StepData: FibonacciDivisionStepData = {
+    start: {
+      x: L.a,
+      fx: f(L.a),
+    },
+    end: {
+      x: L.b,
+      fx: f(L.b),
+    },
+    y: {
+      x: yNMinus2,
+      fx: f(yNMinus2),
+    },
+    z: {
+      x: zNMinus2,
+      fx: f(zNMinus2),
+    },
+    step: k + 1,
+  }
+  const NMinus1StepData: FibonacciDivisionStepData = {
+    start: {
+      x: aNMinus1,
+      fx: f(aNMinus1),
+    },
+    end: {
+      x: bNMinus1,
+      fx: f(bNMinus1),
+    },
+    y: {
+      x: yNMinus1,
+      fx: f(yNMinus1),
+    },
+    z: {
+      x: zNMinus1,
+      fx: f(zNMinus1),
+    },
+    step: k + 2,
+  }
 
-    const xMin = (aNMinus1 + bNMinus1) / 2
-    const ans: AnswerData = {
-      start: {
-        x: aNMinus1,
-        fx: f(aNMinus1),
-      },
-      min: {
-        x: xMin,
-        fx: f(xMin),
-      },
-      end: {
-        x: bNMinus1,
-        fx: f(bNMinus1),
-      },
-      step: k + 2,
-    }
+  const xMin = (aNMinus1 + bNMinus1) / 2
+  const ans: AnswerData = {
+    start: {
+      x: aNMinus1,
+      fx: f(aNMinus1),
+    },
+    min: {
+      x: xMin,
+      fx: f(xMin),
+    },
+    end: {
+      x: bNMinus1,
+      fx: f(bNMinus1),
+    },
+    step: k + 2,
+  }
 
-    logger.log(`k: ${NMinus2StepData.step}, a: ${NMinus2StepData.start.x}, b: ${NMinus2StepData.end.x}, y: ${NMinus2StepData.y.x}, z: ${NMinus2StepData.z.x}`)
-    logger.log(`k: ${NMinus1StepData.step}, a: ${NMinus1StepData.start.x}, b: ${NMinus1StepData.end.x}, y: ${NMinus1StepData.y.x}, z: ${NMinus1StepData.z.x}`)
-    logger.log(`k: ${ans.step}, a: ${ans.start.x}, b: ${ans.end.x}, x: ${ans.min.x}`)
+  logger.log(`k: ${NMinus2StepData.step}, a: ${NMinus2StepData.start.x}, b: ${NMinus2StepData.end.x}, y: ${NMinus2StepData.y.x}, z: ${NMinus2StepData.z.x}`)
+  logger.log(`k: ${NMinus1StepData.step}, a: ${NMinus1StepData.start.x}, b: ${NMinus1StepData.end.x}, y: ${NMinus1StepData.y.x}, z: ${NMinus1StepData.z.x}`)
+  logger.log(`k: ${ans.step}, a: ${ans.start.x}, b: ${ans.end.x}, x: ${ans.min.x}`)
 
-    stepsData.push(NMinus2StepData)
-    stepsData.push(NMinus1StepData)
-    return {
-      stepsData,
-      ans,
-    }
-  
-
+  stepsData.push(NMinus2StepData)
+  stepsData.push(NMinus1StepData)
+  return {
+    stepsData,
+    ans,
+  }
 }
 
 export function fibonacciDivisionMethod(f: Fx, interval: InitialXRange, epsilon: number) {
@@ -438,12 +434,12 @@ export function fibonacciDivisionMethod(f: Fx, interval: InitialXRange, epsilon:
   const stepsData: FibonacciDivisionStepData[] = []
 
   let n = 2
-  while ((interval.b - interval.a) / epsilon > fibNumbers[n - 1]) n++
+  while ((interval.b - interval.a) / epsilon > fib[n - 1]) n++
 
   let a = interval.a
   let b = interval.b
-  let y = a + (fibNumbers[n - 2] / fibNumbers[n]) * (b - a)
-  let z = a + (fibNumbers[n - 1] / fibNumbers[n]) * (b - a)
+  let y = a + (fib[n - 2] / fib[n]) * (b - a)
+  let z = a + (fib[n - 1] / fib[n]) * (b - a)
   let fy = f(y)
   let fz = f(z)
   let k = 0
@@ -475,14 +471,14 @@ export function fibonacciDivisionMethod(f: Fx, interval: InitialXRange, epsilon:
       b = z
       z = y
       fz = fy
-      y = a + (fibNumbers[n - k - 3] / fibNumbers[n - k - 1]) * (b - a)
+      y = a + (fib[n - k - 3] / fib[n - k - 1]) * (b - a)
       fy = f(y)
     }
     else {
       a = y
       y = z
       fy = fz
-      z = a + (fibNumbers[n - k - 2] / fibNumbers[n - k - 1]) * (b - a)
+      z = a + (fib[n - k - 2] / fib[n - k - 1]) * (b - a)
       fz = f(z)
     }
 

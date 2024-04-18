@@ -9,4 +9,4 @@ function fibonacci(n: number): number[] {
 
 const NUMBER_OF_FIBNUMBERS = 200
 
-export const fibNumbers = fibonacci(NUMBER_OF_FIBNUMBERS)
+export const fib = fibonacci(NUMBER_OF_FIBNUMBERS)

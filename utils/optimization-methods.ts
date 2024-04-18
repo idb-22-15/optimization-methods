@@ -1,4 +1,4 @@
-import { fibNumbers } from './fibonacci'
+import { fib } from './fibonacci'
 
 export type Fn = (x: number) => number
 
@@ -104,8 +104,8 @@ export function goldenRatioDivisionAnswer(range: Range, f: Fn, epsilon: number, 
 }
 
 export function fibonacciDivision(range: Range, f: Fn, n: number, k: number, toRounded: Fn): Range {
-  const left = toRounded(range.start.x + (fibNumbers[n - k - 2] / fibNumbers[n]) * range.width)
-  const right = toRounded(range.start.x + (fibNumbers[n - k - 1] / fibNumbers[n]) * range.width)
+  const left = toRounded(range.start.x + (fib[n - k - 2] / fib[n]) * range.width)
+  const right = toRounded(range.start.x + (fib[n - k - 1] / fib[n]) * range.width)
   const fLeft = toRounded(f(left))
   const fRight = toRounded(f(right))
   const leftDot = { x: left, y: fLeft }
@@ -120,8 +120,8 @@ export function fibonacciDivisionAnswer(range: Range, f: Fn, epsilon: number, l:
   const condition = Math.abs(range.width) / l
 
   const maxSteps = (() => {
-    for (let n = 0; n < fibNumbers.length; n++) {
-      if (fibNumbers[n] >= condition)
+    for (let n = 0; n < fib.length; n++) {
+      if (fib[n] >= condition)
         return n
     }
   })() as number
