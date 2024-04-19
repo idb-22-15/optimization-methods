@@ -20,10 +20,14 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectItemText, SelectL
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 // import { defineOgImageComponent, useHead, useSeoMeta } from '#imports'
 
-import { type ExerciseVariant, exerciseVariants } from '~/assets/one-dimensional-optimization-variants'
 import {
-  type
-  AnswerData,
+  type ExerciseVariant,
+  type ExerciseVariantKey,
+  variants,
+} from '~/math/variants/one-dimensional-optimization-variants'
+
+import {
+  type AnswerData,
   type Dot,
   type FibonacciDivisionStepData,
   type GoldenRatioDivisionStepData,
@@ -35,8 +39,11 @@ import {
   goldenRatioDivisionMethod,
   halfDivisionMethod,
 } from '~/math/one-dimensional-optimization'
+
 import { useFunction } from '~/composables/core'
-import { evalFunction } from '~/math/core'
+import SelectVariant, { type SelectVariantHeader } from '~/components/SelectVariant.vue'
+import type { BaseVariant } from '~/math/variants'
+import PlotFigure from '~/components/PlotFigure.vue'
 
 defineOgImageComponent('Frame', {})
 
@@ -188,15 +195,6 @@ const plot = computed(() =>
   }),
 )
 
-onMounted(() => {
-  plotRef.value?.appendChild(plot.value)
-})
-
-watch(plot, (value, _old) => {
-  plotRef.value?.firstChild?.remove()
-  plotRef.value?.appendChild(value)
-})
-
 function selectStep(step: Step) {
   selectedStep.value = step
 }
@@ -212,6 +210,30 @@ function setExerciseVariant(variant: ExerciseVariant) {
   epsilon.value = variant.epsilon
 }
 
+interface Header {
+  key: ExerciseVariantKey
+  title: string
+}
+
+const variantsHeaders: Header[] = [
+  {
+    key: 'order',
+    title: '№',
+  },
+  {
+    key: 'f',
+    title: 'f(x)',
+  },
+  {
+    key: 'range',
+    title: 'L₀',
+  },
+  {
+    key: 'epsilon',
+    title: 'Ɛ',
+  },
+]
+
 useSeoMeta({
   title: 'Методы оптимизации',
   description: 'Методы оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фибоначчи',
@@ -226,7 +248,7 @@ useSeoMeta({
       Методы оптимизации
     </h1>
     <section class="grid grid-cols-[minmax(700px,1fr),1fr] grid-rows-[repeat(2,auto)] gap-4 xl:grid-cols-[1fr] xl:grid-rows-[repeat(3,auto)]">
-      <section ref="plotRef" class="row-span-2 2xl:row-span-1" role="img" />
+      <PlotFigure :plot="plot" class="row-span-2 2xl:row-span-1" />
 
       <section class="grid h-max grid-cols-[repeat(2,max-content_1fr)] items-center gap-x-8 gap-y-4 2xl:grid-cols-[max-content,1fr]">
         <Tabs v-model="selectedMethod" class="col-span-4 2xl:hidden">
@@ -262,35 +284,12 @@ useSeoMeta({
           placeholder="x^2 + 1"
           @change="fString = ($event.target as HTMLInputElement).value"
         />
-        <Popover>
-          <PopoverTrigger as-child class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]">
-            <Button variant="secondary">
-              Варианты
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent class="max-h-[70dvh] w-full overflow-y-auto">
-            <Table class="w-max">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>№</TableHead>
-                  <TableHead>f(x)</TableHead>
-                  <TableHead>L<sub>0</sub></TableHead>
-                  <TableHead>&epsilon;</TableHead>
-                </TableRow>
-                <TableRow
-                  v-for="variant in exerciseVariants" :key="variant.order" class="cursor-pointer" tabindex="0"
-                  @keypress.enter.space="setExerciseVariant(variant)"
-                  @click="setExerciseVariant(variant)"
-                >
-                  <TableCell>{{ variant.order }}</TableCell>
-                  <TableCell>{{ variant.f }}</TableCell>
-                  <TableCell>{{ variant.range }}</TableCell>
-                  <TableCell>{{ variant.epsilon }}</TableCell>
-                </TableRow>
-              </TableHeader>
-            </Table>
-          </PopoverContent>
-        </Popover>
+        <SelectVariant
+          class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]"
+          :headers="variantsHeaders"
+          :variants="variants as any"
+          @select:variant="setExerciseVariant($event as any)"
+        />
         <h4 class="whitespace-nowrap">
           Интервал L<sub>0</sub>
         </h4>
