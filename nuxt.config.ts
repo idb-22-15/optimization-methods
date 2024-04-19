@@ -3,21 +3,21 @@ import '@total-typescript/ts-reset'
 export default defineNuxtConfig({
   ssr: true,
   css: ['~/assets/index.css'],
-  devtools: { enabled: false },
+  devtools: { enabled: true },
   modules: [
     '@nuxtjs/google-fonts',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/seo',
+    '@nuxt/eslint',
     'shadcn-nuxt',
-    'nuxt-module-eslint-config',
   ],
   shadcn: {
     prefix: '',
     componentDir: './components/ui',
   },
-  eslintConfig: {
-    setup: false,
-  },
+  // eslintConfig: {
+  //   setup: false,
+  // },
   googleFonts: {
     families: {
       'Roboto Mono': true,
@@ -34,4 +34,7 @@ export default defineNuxtConfig({
     name: 'Методы оптимизации',
     url: 'http://optimization-methods.biplane-design.com',
   },
+  // alias: {
+  //   'plotly.js-dist': '../node_modules/@types/plotly.js',
+  // },
 })

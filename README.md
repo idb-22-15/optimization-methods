@@ -12,4 +12,7 @@
 - `nuxt/seo` для `og:image`
 - `mathjs` для парсинга функции, заданной пользователем
 
+### Тестирование
+- unit-tests: `bun:test`
+
 ![screen](./public/screen.png)
