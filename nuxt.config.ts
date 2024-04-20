@@ -34,7 +34,8 @@ export default defineNuxtConfig({
     name: 'Методы оптимизации',
     url: 'http://optimization-methods.biplane-design.com',
   },
-  // alias: {
-  //   'plotly.js-dist': '../node_modules/@types/plotly.js',
-  // },
+  alias: {
+    '~': '..',
+    // 'plotly.js-dist': '../node_modules/@types/plotly.js',
+  },
 })
