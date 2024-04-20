@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   // },
   googleFonts: {
     families: {
-      'Roboto Mono': true,
+      'JetBrains Mono': true,
     },
   },
   imports: {

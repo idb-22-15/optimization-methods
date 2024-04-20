@@ -244,9 +244,6 @@ useSeoMeta({
 
 <template>
   <main class="mx-auto my-4 flex flex-col gap-4 px-8">
-    <h1 class="text-2xl font-bold">
-      Методы оптимизации
-    </h1>
     <section class="grid grid-cols-[minmax(700px,1fr),1fr] grid-rows-[repeat(2,auto)] gap-4 xl:grid-cols-[1fr] xl:grid-rows-[repeat(3,auto)]">
       <PlotFigure :plot="plot" class="row-span-2 2xl:row-span-1" />
 

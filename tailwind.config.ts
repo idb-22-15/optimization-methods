@@ -26,12 +26,11 @@ export default {
     container: {
       center: true,
       padding: '2rem',
-
     },
     extend: {
       fontFamily: {
         sans: [
-          'Roboto Mono',
+          'JetBrains Mono',
           ...fontFamily.sans,
         ],
       },
