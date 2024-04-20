@@ -9,6 +9,7 @@ import { useMethodParams } from '~/composables/gradient-descent'
 import SelectVariant, { type SelectVariantHeader } from '~/components/SelectVariant.vue'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/components/ui/resizable'
 import PlotFigure3d from '~/components/PlotFigure3d.vue'
+import SelectMethod, { type MethodData } from '~/components/SelectMethod.vue'
 
 const resizablePlotRef = ref<HTMLInputElement | null>(null)
 const { height: windowHeight } = useWindowSize()
@@ -54,12 +55,7 @@ const layout = computed< Partial<Plotly.Layout>>(() => ({
 
 const config: Partial<Plotly.Config> = { displaylogo: false, responsive: true, displayModeBar: false }
 
-interface SelectMethod {
-  method: Method
-  title: string
-}
-
-const methods: SelectMethod[] = [{
+const methods: MethodData[] = [{
   method: Method.gradientDescentWithConstantStep,
   title: 'Метод градиентного спуска с постоянный шагом',
 }]
@@ -102,84 +98,56 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel :collapsible="true" :collapsed-size="20" :min-size="30" class="ml-4">
-        <Tabs v-model="selectedMethod" class="col-span-4 2xl:hidden">
-          <TabsList>
-            <TabsTrigger
-              v-for="method in methods"
-              :key="method.method"
-              :value="method.method"
-            >
-              <h2> {{ method.title }}</h2>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <section>
+          <SelectMethod v-model="selectedMethod" :methods="methods" />
+          <Label class="whitespace-nowrap text-base" for="function">Функция f(x)</Label>
+          <Input
+            id="function" class="min-w-[160px]"
+            :model-value="fString"
+            :class="[f === null ? 'bg-red-100' : '']"
+            type="text"
+            placeholder="x^2 + 1"
+            @change="fString = ($event.target as HTMLInputElement).value"
+          />
+          <SelectVariant
+            class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]"
+            :headers="variantsHeaders"
+            :variants="variants as any"
+            @select:variant="setExerciseVariant($event as any)"
+          />
+          <h4 class="whitespace-nowrap">
+            Интервал L<sub>0</sub>
+          </h4>
+          <div class="col-span-3 grid w-max grid-cols-[1fr_1fr] items-center gap-4 2xl:col-span-1">
+            <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
+              <Label for="x1-start" class="text-base">От</Label>
+              <Input id="x1-start" v-model="x1Interval.start" type="number" class="w-20" name="" />
+            </fieldset>
+            <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
+              <Label for="x1-end" class="text-base">До</Label>
+              <Input id="x1-end" v-model="x1Interval.end" type="number" class="w-20" name="" />
+            </fieldset>
+          </div>
 
-        <Select v-model="selectedMethod" name="select-method">
-          <SelectTrigger class="hidden w-max 2xl:-order-1 2xl:flex 2xl:[grid-area:1/1/2/3]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Методы</SelectLabel>
-              <SelectItem
-                v-for="method in methods"
-                :key="method.method"
-                :value="method.method"
-                class="cursor-pointer"
-              >
-                {{ method.title }}
-              </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <Label class="whitespace-nowrap text-base" for="function">Функция f(x)</Label>
-        <Input
-          id="function" class="min-w-[160px]"
-          :model-value="fString"
-          :class="[f === null ? 'bg-red-100' : '']"
-          type="text"
-          placeholder="x^2 + 1"
-          @change="fString = ($event.target as HTMLInputElement).value"
-        />
-        <SelectVariant
-          class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]"
-          :headers="variantsHeaders"
-          :variants="variants as any"
-          @select:variant="setExerciseVariant($event as any)"
-        />
-        <h4 class="whitespace-nowrap">
-          Интервал L<sub>0</sub>
-        </h4>
-        <div class="col-span-3 grid w-max grid-cols-[1fr_1fr] items-center gap-4 2xl:col-span-1">
-          <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
-            <Label for="x1-start" class="text-base">От</Label>
-            <Input id="x1-start" v-model="x1Interval.start" type="number" class="w-20" name="" />
-          </fieldset>
-          <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
-            <Label for="x1-end" class="text-base">До</Label>
-            <Input id="x1-end" v-model="x1Interval.end" type="number" class="w-20" name="" />
-          </fieldset>
-        </div>
-
-        <Label for="accuracy-epsilon1" class="whitespace-nowrap text-base">Точность Ɛ₁</Label>
-        <Input
-          id="accuracy-epsilon1"
-          v-model.number="epsilon1"
-          type="number"
-          min="0.001"
-          step="0.01"
-          max="1"
-        />
-        <Label for="accuracy-epsilon2" class="whitespace-nowrap text-base">Точность Ɛ₂</Label>
-        <Input
-          id="accuracy-epsilon2"
-          v-model.number="epsilon2"
-          type="number"
-          min="0.001"
-          step="0.01"
-          max="1"
-        />
-        <!--   <Label for="decimal-places" class="whitespace-nowrap text-base">Знаков после запятой</Label>
+          <Label for="accuracy-epsilon1" class="whitespace-nowrap text-base">Точность Ɛ₁</Label>
+          <Input
+            id="accuracy-epsilon1"
+            v-model.number="epsilon1"
+            type="number"
+            min="0.001"
+            step="0.01"
+            max="1"
+          />
+          <Label for="accuracy-epsilon2" class="whitespace-nowrap text-base">Точность Ɛ₂</Label>
+          <Input
+            id="accuracy-epsilon2"
+            v-model.number="epsilon2"
+            type="number"
+            min="0.001"
+            step="0.01"
+            max="1"
+          />
+          <!--   <Label for="decimal-places" class="whitespace-nowrap text-base">Знаков после запятой</Label>
         <Input
           id="decimal-places"
           v-model.number="decimalPlaces"
@@ -189,16 +157,17 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
           max="10"
         /> -->
 
-        <Label for="count-steps" class="whitespace-nowrap text-base">Количество шагов</Label>
-        <Input
-          id="count-steps"
-          :value="steps"
-          disabled
-          :placeholder="steps"
-          type="number"
-          min="2"
-          max="1000"
-        />
+          <Label for="count-steps" class="whitespace-nowrap text-base">Количество шагов</Label>
+          <Input
+            id="count-steps"
+            :value="steps"
+            disabled
+            :placeholder="steps"
+            type="number"
+            min="2"
+            max="1000"
+          />
+        </section>
       </ResizablePanel>
     </ResizablePanelGroup>
   </main>

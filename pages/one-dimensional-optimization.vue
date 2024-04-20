@@ -29,7 +29,6 @@ import {
   type GoldenRatioDivisionStepData,
   type HalfDivisionStepData,
   type InitialXRange,
-  type Interval,
   Method,
   type YZDots,
   fibonacciDivisionMethod,
@@ -41,15 +40,12 @@ import { useFunction } from '~/composables/core'
 import SelectVariant, { type SelectVariantHeader } from '~/components/SelectVariant.vue'
 import PlotFigure from '~/components/PlotFigure.vue'
 import { useMethodParams } from '~/composables/one-dimensional-optimization'
+import SelectMethod, { type MethodData } from '~/components/SelectMethod.vue'
+import type { Interval } from '~/math/core'
 
 defineOgImageComponent('Frame', {})
 
-interface SelectMethod {
-  method: Method
-  title: string
-}
-
-const methods: SelectMethod[] = [
+const methods: MethodData[] = [
   {
     method: Method.halfDivision,
     title: 'Метод половинного деления',
@@ -65,11 +61,11 @@ const methods: SelectMethod[] = [
 ]
 const { f, fString, range1d, range2d, setExerciseVariant, epsilon } = useMethodParams()
 
-const selectedMethod = ref<Method>(methods[0].method)
+const selectedMethod = ref<string>(methods[0].method)
 
 const plotRef = ref<HTMLDivElement | null>(null)
 
-function makeSlicedPlotArea(initialRange: Interval, range: Interval, minY: number, maxY: number): [Plot.Area, Plot.Area] {
+function makeSlicedPlotArea(initialRange: Interval<Dot>, range: Interval<Dot>, minY: number, maxY: number): [Plot.Area, Plot.Area] {
   const leftArea = Plot.areaX(
     [
       { x: range.start.x, y: minY },
@@ -113,7 +109,7 @@ function createArray(start: number, end: number, countItems: number) {
   return Array.from({ length: countItems }, (_, index) => start + index * step)
 }
 
-const selectedResultData = computed<Interval[]>(() => {
+const selectedResultData = computed<Interval<Dot>[]>(() => {
   if (selectedStep.value === 'initial')
     return [range2d.value]
 
@@ -229,35 +225,12 @@ useSeoMeta({
       <PlotFigure :plot="plot" class="row-span-2 2xl:row-span-1" />
 
       <section class="grid h-max grid-cols-[repeat(2,max-content_1fr)] items-center gap-x-8 gap-y-4 2xl:grid-cols-[max-content,1fr]">
-        <Tabs v-model="selectedMethod" class="col-span-4 2xl:hidden">
-          <TabsList>
-            <TabsTrigger
-              v-for="method in methods"
-              :key="method.method"
-              :value="method.method"
-            >
-              <h2> {{ method.title }}</h2>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Select v-model="selectedMethod" name="select-method">
-          <SelectTrigger class="hidden w-max 2xl:-order-1 2xl:flex 2xl:[grid-area:1/1/2/3]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Методы</SelectLabel>
-              <SelectItem
-                v-for="method in methods"
-                :key="method.method"
-                :value="method.method"
-                class="cursor-pointer"
-              >
-                {{ method.title }}
-              </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <SelectMethod
+          v-model="selectedMethod" :methods="methods"
+          tab-class="col-span-4 "
+          select-class="2xl:-order-1 2xl:[grid-area:1/1/2/3]"
+        />
+
         <Label class="whitespace-nowrap text-base" for="function">Функция f(x)</Label>
         <Input
           id="function" class="min-w-[160px]"
