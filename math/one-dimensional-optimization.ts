@@ -1,7 +1,14 @@
 import { fib } from '../utils/fibonacci'
 import { logger } from '../utils/logger'
+import type { Interval } from './core'
 
 export type Fx = (x: number) => number
+
+export enum Method {
+  halfDivision = 'halfDivision',
+  goldenRatio = 'goldenRatio',
+  fibonacci = 'fibonacci',
+}
 
 export interface InitialXRange {
   a: number
@@ -13,17 +20,12 @@ export interface Dot {
   fx: number
 }
 
-export interface Range {
-  start: Dot
-  end: Dot
-}
-
 export interface YZDots {
   y: Dot
   z: Dot
 }
 
-export interface HalfDivisionStepData extends Range, YZDots {
+export interface HalfDivisionStepData extends Interval<Dot>, YZDots {
   start: Dot
   center: Dot
   end: Dot
@@ -32,7 +34,7 @@ export interface HalfDivisionStepData extends Range, YZDots {
   step: number
 }
 
-export interface GoldenRatioDivisionStepData extends Range, YZDots {
+export interface GoldenRatioDivisionStepData extends Interval<Dot>, YZDots {
   start: Dot
   end: Dot
   y: Dot
@@ -40,7 +42,7 @@ export interface GoldenRatioDivisionStepData extends Range, YZDots {
   step: number
 }
 
-export interface FibonacciDivisionStepData extends Range, YZDots {
+export interface FibonacciDivisionStepData extends Interval<Dot>, YZDots {
   start: Dot
   end: Dot
   y: Dot
@@ -48,7 +50,7 @@ export interface FibonacciDivisionStepData extends Range, YZDots {
   step: number
 }
 
-export interface AnswerData extends Range {
+export interface AnswerData extends Interval<Dot> {
   start: Dot
   min: Dot
   end: Dot

@@ -1,32 +1,58 @@
-import { type VecX, getFunction, getFunctionDerivative, getGradient } from './core'
+import { type Fx, type Vec2, getFunction, getFunctionDerivative, getGradient } from './core'
 
-function getNorm(vec: VecX) {
+function getNorm(vec: Vec2) {
   return Math.sqrt(vec.x1 ** 2 + vec.x2 ** 2)
 }
 
-interface Answer {
-  x: VecX
+export enum Method {
+  gradientDescentWithConstantStep = 'gradientDescentWithConstantStep',
+}
+
+interface AnswerData {
+  x: Vec2
+  fx: number
+  step: number
+}
+
+interface GradientDescentWithConstantStepStepData {
+  x: Vec2
+  fx: number
+  step: number
 }
 
 export function gradientDescentWithConstantStep(
   fString: string,
-  x0: VecX,
+  x0: Vec2,
   epsilon1: number,
   epsilon2: number,
   M: number,
   t: number | undefined = 0.5,
-): Answer {
+) {
+  // !FIXME null
   const f = getFunction(fString)!
 
+  const stepsData: GradientDescentWithConstantStepStepData[] = []
+
   for (let k = 0, xk = x0; ; k++) {
-    // const xk = x
+    const step: GradientDescentWithConstantStepStepData = {
+      x: xk,
+      fx: f(xk)!,
+      step: k,
+    }
+    stepsData.push(step)
 
     const grad = getGradient(fString, xk)!
     const norm = getNorm(grad)
 
     if (norm < epsilon1 || k >= M) {
-      return {
+      const answer: AnswerData = {
         x: xk,
+        fx: f(xk)!,
+        step: k,
+      }
+      return {
+        stepsData,
+        answer,
       }
     }
 
@@ -48,13 +74,22 @@ export function gradientDescentWithConstantStep(
 
     const xkPlus1Cur = xkPlus1()
     // step 9
-    const diff: VecX = {
+    const diff: Vec2 = {
       x1: xkPlus1Cur.x1 - xk.x1,
       x2: xkPlus1Cur.x2 - xk.x2,
     }
     const diffnorm = getNorm(diff)
-    if (diffnorm < epsilon2 && Math.abs(fdiff()) < epsilon2)
-      return { x: xk }
+    if (diffnorm < epsilon2 && Math.abs(fdiff()) < epsilon2) {
+      const answer: AnswerData = {
+        x: xk,
+        fx: f(xk)!,
+        step: k,
+      }
+      return {
+        stepsData,
+        answer,
+      }
+    }
 
     xk = xkPlus1Cur
   }

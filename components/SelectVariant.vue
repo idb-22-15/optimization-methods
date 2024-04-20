@@ -1,16 +1,15 @@
 <script setup lang="ts" generic="Variant extends BaseVariant & Record<string, unknown>">
 import type { HTMLAttributes } from 'vue'
-import type { cn } from '~/lib/utils'
 import type { BaseVariant } from '~/math/variants'
 
-export interface SelectVariantHeader {
+export interface SelectVariantHeader<HeaderKey extends string> {
   title: string
-  key: string
+  key: HeaderKey
 }
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
-  headers: SelectVariantHeader[]
+  headers: SelectVariantHeader<string>[]
   variants: Variant[]
 }>()
 

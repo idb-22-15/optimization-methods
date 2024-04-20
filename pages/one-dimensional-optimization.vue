@@ -2,7 +2,6 @@
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import * as Plot from '@observablehq/plot'
 
-// import { type Ref, computed, onMounted, ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import {
@@ -13,12 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { Checkbox } from '~/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectItemText, SelectLabel, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
-// import { defineOgImageComponent, useHead, useSeoMeta } from '#imports'
 
 import {
   type ExerciseVariant,
@@ -33,7 +29,8 @@ import {
   type GoldenRatioDivisionStepData,
   type HalfDivisionStepData,
   type InitialXRange,
-  type Range,
+  type Interval,
+  Method,
   type YZDots,
   fibonacciDivisionMethod,
   goldenRatioDivisionMethod,
@@ -42,39 +39,37 @@ import {
 
 import { useFunction } from '~/composables/core'
 import SelectVariant, { type SelectVariantHeader } from '~/components/SelectVariant.vue'
-import type { BaseVariant } from '~/math/variants'
 import PlotFigure from '~/components/PlotFigure.vue'
+import { useMethodParams } from '~/composables/one-dimensional-optimization'
 
 defineOgImageComponent('Frame', {})
 
-const methods = ['Метод половинного деления', 'Метод золотого сечения', 'Метод чисел Фибоначчи'] as const
-type Method = typeof methods[number]
+interface SelectMethod {
+  method: Method
+  title: string
+}
 
-const selectedMethod = ref<Method>(methods[0])
+const methods: SelectMethod[] = [
+  {
+    method: Method.halfDivision,
+    title: 'Метод половинного деления',
+  },
+  {
+    method: Method.goldenRatio,
+    title: 'Метод золотого сечения',
+  },
+  {
+    method: Method.fibonacci,
+    title: 'Метод чисел Фибоначчи',
+  },
+]
+const { f, fString, range1d, range2d, setExerciseVariant, epsilon } = useMethodParams()
+
+const selectedMethod = ref<Method>(methods[0].method)
 
 const plotRef = ref<HTMLDivElement | null>(null)
 
-const fString = ref('x^3')
-const expr = useFunction(fString)
-
-function f(x: number) {
-  return expr.value?.({ x }) || x
-}
-
-const range1d = ref<InitialXRange>({ a: -10, b: 10 })
-const range2d = computed<{ start: Dot, end: Dot }>(() => ({
-  start: {
-    x: range1d.value.a,
-    fx: f(range1d.value.a),
-  },
-  end: {
-    x: range1d.value.b,
-    fx: f(range1d.value.b),
-  },
-
-}))
-
-function makeSlicedPlotArea(initialRange: Range, range: Range, minY: number, maxY: number): [Plot.Area, Plot.Area] {
+function makeSlicedPlotArea(initialRange: Interval, range: Interval, minY: number, maxY: number): [Plot.Area, Plot.Area] {
   const leftArea = Plot.areaX(
     [
       { x: range.start.x, y: minY },
@@ -94,17 +89,15 @@ function makeSlicedPlotArea(initialRange: Range, range: Range, minY: number, max
   return [leftArea, rightArea]
 }
 
-const epsilon = ref(0.2)
-
 const resultData = computed<{
   ans: AnswerData
   stepsData: HalfDivisionStepData[] | GoldenRatioDivisionStepData[] | FibonacciDivisionStepData[]
 }>(() => {
   switch (selectedMethod.value) {
-    case 'Метод половинного деления' : return halfDivisionMethod(f, range1d.value, epsilon.value)
-    case 'Метод золотого сечения' : return goldenRatioDivisionMethod(f, range1d.value, epsilon.value)
-    case 'Метод чисел Фибоначчи': return fibonacciDivisionMethod(f, range1d.value, epsilon.value)
-    default: throw new Error('no path')
+    case Method.halfDivision : return halfDivisionMethod(f.value, range1d.value, epsilon.value)
+    case Method.goldenRatio : return goldenRatioDivisionMethod(f.value, range1d.value, epsilon.value)
+    case Method.fibonacci: return fibonacciDivisionMethod(f.value, range1d.value, epsilon.value)
+    default: throw new Error('no method')
   }
 })
 
@@ -120,7 +113,7 @@ function createArray(start: number, end: number, countItems: number) {
   return Array.from({ length: countItems }, (_, index) => start + index * step)
 }
 
-const selectedResultData = computed<Range[]>(() => {
+const selectedResultData = computed<Interval[]>(() => {
   if (selectedStep.value === 'initial')
     return [range2d.value]
 
@@ -135,7 +128,7 @@ const steps = computed(() => resultData.value.stepsData.length)
 const COUNT_DOTS = 100
 const data = computed<Dot[]>(() => createArray(range1d.value.a, range1d.value.b, COUNT_DOTS).map(x => ({
   x,
-  fx: f(x),
+  fx: f.value(x),
 })))
 
 const minY = computed(() => Math.min(...data.value.map(d => d.fx)))
@@ -203,19 +196,7 @@ watch([selectedMethod, fString, range1d, epsilon], () => {
   selectedStep.value = 'answer'
 })
 
-function setExerciseVariant(variant: ExerciseVariant) {
-  fString.value = variant.f
-  range1d.value.a = variant.range[0]
-  range1d.value.b = variant.range[1]
-  epsilon.value = variant.epsilon
-}
-
-interface Header {
-  key: ExerciseVariantKey
-  title: string
-}
-
-const variantsHeaders: Header[] = [
+const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
   {
     key: 'order',
     title: '№',
@@ -235,10 +216,10 @@ const variantsHeaders: Header[] = [
 ]
 
 useSeoMeta({
-  title: 'Методы оптимизации',
-  description: 'Методы оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фибоначчи',
-  ogTitle: 'Методы оптимизации',
-  ogDescription: 'Методы оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фибоначчи',
+  title: 'Методы одномерной оптимизации',
+  description: 'Методы одномерной оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фибоначчи',
+  ogTitle: 'Методы одномерной оптимизации',
+  ogDescription: 'Методы одномерной оптимизации для нахождения глобальных минимумов функции. Метод половинного деления. Метод золотого сечения. Метод чисел Фибоначчи',
 })
 </script>
 
@@ -252,10 +233,10 @@ useSeoMeta({
           <TabsList>
             <TabsTrigger
               v-for="method in methods"
-              :key="method" :value="method"
-              :class="[method === selectedMethod ? '' : '']"
+              :key="method.method"
+              :value="method.method"
             >
-              <h2> {{ method }}</h2>
+              <h2> {{ method.title }}</h2>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -266,8 +247,13 @@ useSeoMeta({
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Методы</SelectLabel>
-              <SelectItem v-for="method in methods" :key="method" class="cursor-pointer" :value="method">
-                {{ method }}
+              <SelectItem
+                v-for="method in methods"
+                :key="method.method"
+                :value="method.method"
+                class="cursor-pointer"
+              >
+                {{ method.title }}
               </SelectItem>
             </SelectGroup>
           </SelectContent>
@@ -276,7 +262,7 @@ useSeoMeta({
         <Input
           id="function" class="min-w-[160px]"
           :model-value="fString"
-          :class="[expr === null ? 'bg-red-100' : '']"
+          :class="[f === null ? 'bg-red-100' : '']"
           type="text"
           placeholder="x^2 + 1"
           @change="fString = ($event.target as HTMLInputElement).value"

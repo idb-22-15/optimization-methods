@@ -1,5 +1,12 @@
 import { type EvalFunction, type MathNode, compile, derivative, parse, string } from 'mathjs/number'
 
+export type Fx = (x: number) => number
+
+export interface Interval<T> {
+  start: T
+  end: T
+}
+
 export function getFunctionNode(f: string) {
   try {
     return parse(f)
@@ -41,14 +48,14 @@ export function getFunctionDerivative(f: string, variable: 'x' | 'x1' | 'x2') {
   }
 }
 
-export interface VecX {
+export interface Vec2 {
   x1: number
   x2: number
 }
 
 export type FunctionScope = {
   x: number
-} | VecX
+} | Vec2
 
 export function evalFunction(f: EvalFunction | null, scope: FunctionScope) {
   if (!f)
@@ -61,7 +68,7 @@ export function evalFunction(f: EvalFunction | null, scope: FunctionScope) {
   }
 }
 
-export function getGradient(fString: string, scope: FunctionScope): VecX | null {
+export function getGradient(fString: string, scope: FunctionScope): Vec2 | null {
   const dfdx1 = getFunctionDerivative(fString, 'x1')
   const dfdx2 = getFunctionDerivative(fString, 'x2')
 
