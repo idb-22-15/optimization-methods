@@ -8,7 +8,7 @@ import { Method, type StepData, gradientDescentWithConstantStep } from '~/math/g
 import { useMethodParams } from '~/composables/gradient-descent'
 import SelectVariant, { type SelectVariantHeader } from '~/components/SelectVariant.vue'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/components/ui/resizable'
-import PlotFigure3d from '~/components/PlotFigure3d.vue'
+import PlotFigure3d from '~/components/PlotFigure3d.client.vue'
 import SelectMethod, { type MethodData } from '~/components/SelectMethod.vue'
 
 useSeoMeta({
@@ -194,8 +194,10 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
 <template>
   <main class="container">
     <ResizablePanelGroup direction="horizontal" class="overflow-visible">
-      <ResizablePanel ref="resizablePlotRef">
-        <PlotFigure3d :data="data" :layout="layout" :config="config" />
+      <ResizablePanel ref="resizablePlotRef" as-child :min-size="30">
+        <ClientOnly>
+          <PlotFigure3d :data="data" :layout="layout" :config="config" />
+        </ClientOnly>
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel :min-size="40" class="ml-4 flex flex-col gap-4" as-child>

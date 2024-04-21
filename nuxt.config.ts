@@ -1,7 +1,7 @@
 import '@total-typescript/ts-reset'
 
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
   css: ['~/assets/index.css'],
   devtools: { enabled: true },
   app: {
@@ -42,9 +42,4 @@ export default defineNuxtConfig({
     url: 'http://optimization-methods.biplane-design.com',
 
   },
-  alias: {
-    '~': '..',
-    // 'plotly.js-dist': '../node_modules/@types/plotly.js',
-  },
-
 })
