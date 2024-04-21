@@ -4,6 +4,13 @@ export default defineNuxtConfig({
   ssr: true,
   css: ['~/assets/index.css'],
   devtools: { enabled: true },
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/icon.svg' },
+      ],
+    },
+  },
   modules: [
     '@nuxtjs/google-fonts',
     '@nuxtjs/tailwindcss',
@@ -31,11 +38,13 @@ export default defineNuxtConfig({
     dirs: [],
   },
   site: {
-    name: 'Методы оптимизации',
+    name: 'Методы оптимизации онлайн. Найти минимум функции',
     url: 'http://optimization-methods.biplane-design.com',
+
   },
   alias: {
     '~': '..',
     // 'plotly.js-dist': '../node_modules/@types/plotly.js',
   },
+
 })

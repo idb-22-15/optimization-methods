@@ -11,6 +11,13 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/componen
 import PlotFigure3d from '~/components/PlotFigure3d.vue'
 import SelectMethod, { type MethodData } from '~/components/SelectMethod.vue'
 
+useSeoMeta({
+  title: 'Методы двумерной оптимизации',
+  description: 'Методы двумерной оптимизации для нахождения глобальных минимумов функции. Метод градиентного спуска с постоянным шагом. Метод наискорейшего градиентного спуска.',
+  ogTitle: 'Методы двумерной оптимизации',
+  ogDescription: 'Методы двумерной оптимизации для нахождения глобальных минимумов функции. Метод градиентного спуска с постоянным шагом. Метод наискорейшего градиентного спуска.',
+})
+
 const resizablePlotRef = ref<HTMLInputElement | null>(null)
 const { height: windowHeight } = useWindowSize()
 const { width: resizablePlotWidth } = useElementSize(resizablePlotRef, { width: 500, height: 500 })

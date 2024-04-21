@@ -14,8 +14,9 @@ const links = [{
 
 <template>
   <header class="container flex gap-4 py-4 mb-4 justify-between items-center">
-    <NuxtLink to="/">
-      <span class="font-medium text-xl">📉 Методы оптимизации</span>
+    <NuxtLink to="/" class="flex gap-2 items-center">
+      <img src="/icon.svg" alt="" class="w-10 h-10">
+      <span class="font-medium text-xl"> Методы оптимизации</span>
     </NuxtLink>
 
     <nav>
