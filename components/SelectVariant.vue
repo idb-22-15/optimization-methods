@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="Variant extends BaseVariant & Record<string, unknown>">
+<script setup lang="ts" generic="Variant extends BaseVariant">
 import type { HTMLAttributes } from 'vue'
 import type { BaseVariant } from '~/math/variants'
 
@@ -39,7 +39,7 @@ const emit = defineEmits<{
             @click="emit('select:variant', variant)"
           >
             <TableCell v-for="{ key } in props.headers" :key="key">
-              {{ variant[key] }}
+              {{ variant[key as keyof BaseVariant] }}
             </TableCell>
           </TableRow>
         </TableHeader>

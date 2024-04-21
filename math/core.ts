@@ -16,7 +16,10 @@ export function getFunctionNode(f: string) {
   }
 }
 
-export function getFunction(f: string) {
+export type FunctionWithScope = (scope: FunctionScope) => number | null
+export type ValidFunctionWithScope = (scope: FunctionScope) => number
+
+export function getFunction(f: string): FunctionWithScope | null {
   try {
     const compiled = compile(f)
     return (scope: FunctionScope) => evalFunction(compiled, scope)
@@ -24,6 +27,10 @@ export function getFunction(f: string) {
   catch (_e) {
     return null
   }
+}
+export function isValidFunction(f: FunctionWithScope, scope: FunctionScope): f is ValidFunctionWithScope {
+  const res = f(scope)
+  return res !== null
 }
 
 export function getFunctionDerivativeNode(f: string, variable: 'x' | 'x1' | 'x2') {

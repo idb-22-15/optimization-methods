@@ -32,13 +32,12 @@ const selectedMethod = defineModel<string>('modelValue', { required: true })
     </TabsList>
   </Tabs>
 
-  <Select v-model="selectedMethod" name="select-method">
+  <Select v-model="selectedMethod" name="select-method ">
     <SelectTrigger :class="cn('hidden w-max 2xl:flex', props.selectClass)">
-      <SelectValue />
+      <SelectValue class="w-max" />
     </SelectTrigger>
     <SelectContent>
       <SelectGroup>
-        <SelectLabel>Методы</SelectLabel>
         <SelectItem
           v-for="method in props.methods"
           :key="method.method"

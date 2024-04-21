@@ -1,12 +1,13 @@
-import type { Interval, Vec2 } from '~/math/core'
+import { Method, gradientDescentWithConstantStep } from '~/math/gradient-descent'
+import { type Interval, type Vec2, isValidFunction } from '~/math/core'
 import { type ExerciseVariant, variants } from '~/math/variants/gradient-descent-variants'
 
-export function useMethodParams() {
+export function useMethodParams(method: Ref<string>) {
   const fString = ref(variants[14].f)
   const f = useFunction(fString)
 
-  const x1Interval = ref<Interval<number>>({ start: -5, end: 5 })
-  const x2Interval = ref<Interval<number>>({ start: -5, end: 5 })
+  const x1Interval = ref<Interval<number>>({ start: -1, end: 1 })
+  const x2Interval = ref<Interval<number>>({ start: -1, end: 1 })
 
   const x0 = ref<Vec2>({ x1: 0, x2: 0.5 })
   const epsilon1 = ref(0.15)
@@ -24,6 +25,17 @@ export function useMethodParams() {
     M.value = variant.M
   }
 
+  const result = computed(() => {
+    if (!f.value || !isValidFunction(f.value, { x1: 1, x2: 1 }))
+      return null
+
+    switch (method.value) {
+      case Method.gradientDescentWithConstantStep:
+        return gradientDescentWithConstantStep(fString.value, x0.value, epsilon1.value, epsilon2.value, M.value)
+      default: throw new Error('no method')
+    }
+  })
+
   return {
     fString,
     f,
@@ -34,5 +46,6 @@ export function useMethodParams() {
     epsilon2,
     M,
     setExerciseVariant,
+    result,
   }
 }

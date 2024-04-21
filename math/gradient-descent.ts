@@ -14,6 +14,12 @@ interface AnswerData {
   step: number
 }
 
+export interface StepData {
+  x: Vec2
+  fx: number
+  step: number
+}
+
 interface GradientDescentWithConstantStepStepData {
   x: Vec2
   fx: number

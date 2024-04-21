@@ -104,11 +104,6 @@ const resultData = computed<{
 type Step = 'initial' | number | 'answer'
 const selectedStep = ref<Step>('answer')
 
-function createArray(start: number, end: number, countItems: number) {
-  const step = (end - start) / (countItems - 1)
-  return Array.from({ length: countItems }, (_, index) => start + index * step)
-}
-
 const selectedResultData = computed<Interval<Dot>[]>(() => {
   if (selectedStep.value === 'initial')
     return [range2d.value]
@@ -122,7 +117,8 @@ const selectedResultData = computed<Interval<Dot>[]>(() => {
 const steps = computed(() => resultData.value.stepsData.length)
 
 const COUNT_DOTS = 100
-const data = computed<Dot[]>(() => createArray(range1d.value.a, range1d.value.b, COUNT_DOTS).map(x => ({
+const interval = computed<Interval<number>>(() => ({ start: range1d.value.a, end: range1d.value.b }))
+const data = computed<Dot[]>(() => useSequence(interval, COUNT_DOTS).value.map(x => ({
   x,
   fx: f.value(x),
 })))
@@ -243,8 +239,8 @@ useSeoMeta({
         <SelectVariant
           class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]"
           :headers="variantsHeaders"
-          :variants="variants as any"
-          @select:variant="setExerciseVariant($event as any)"
+          :variants="variants"
+          @select:variant="setExerciseVariant"
         />
         <h4 class="whitespace-nowrap">
           Интервал L<sub>0</sub>
