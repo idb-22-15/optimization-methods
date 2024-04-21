@@ -1,7 +1,7 @@
 import '@total-typescript/ts-reset'
 
 export default defineNuxtConfig({
-  ssr: true,
+  ssr: false,
   css: ['~/assets/index.css'],
   devtools: { enabled: true },
   app: {
