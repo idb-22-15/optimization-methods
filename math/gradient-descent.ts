@@ -50,7 +50,8 @@ export function gradientDescentWithConstantStep(
     const grad = getGradient(fString, xk)!
     const norm = getNorm(grad)
 
-    if (norm < epsilon1 || k >= M) {
+    // steps 4, 5
+    if (norm < epsilon1 || k >= M - 1) {
       const answer: AnswerData = {
         x: xk,
         fx: f(xk)!,

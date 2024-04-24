@@ -210,7 +210,10 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
               class="w-fit 2xl:justify-self-end"
               :headers="variantsHeaders"
               :variants="variants"
-              @select:variant="setExerciseVariant, selectedStep = 'answer'"
+              @select:variant="(variant) => {
+                setExerciseVariant(variant)
+                selectedStep = 'answer'
+              }"
             />
           </div>
           <div class="col-start-1 col-end-3">
