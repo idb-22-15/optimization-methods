@@ -44,6 +44,7 @@ const {
   epsilon1,
   epsilon2,
   M,
+  l,
   setExerciseVariant,
   result,
 } = useMethodParams(selectedMethod)
@@ -159,6 +160,7 @@ const layout = computed< Partial<Plotly.Layout>>(() => ({
     yaxis: { title: 'x2' },
     zaxis: { title: 'f(x₁, x₂)' },
   },
+
 }))
 
 const config: Partial<Plotly.Config> = { displaylogo: false, responsive: true, displayModeBar: false }
@@ -200,7 +202,7 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
         </ClientOnly>
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel :min-size="40" class="ml-4 flex flex-col gap-4" as-child>
+      <ResizablePanel :min-size="40" class="ml-4 flex flex-col gap-4 [overflow:visible_!important]" as-child>
         <section class="grid h-max grid-cols-2 items-center gap-x-8 gap-y-4">
           <div class="flex gap-4">
             <SelectMethod v-model="selectedMethod" :methods="methods" />
@@ -208,7 +210,7 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
               class="w-fit 2xl:justify-self-end"
               :headers="variantsHeaders"
               :variants="variants"
-              @select:variant="setExerciseVariant"
+              @select:variant="setExerciseVariant, selectedStep = 'answer'"
             />
           </div>
           <div class="col-start-1 col-end-3">
@@ -220,6 +222,35 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
               type="text"
               placeholder="x^2 + 1"
               @change="fString = ($event.target as HTMLInputElement).value"
+            />
+          </div>
+
+          <div class="">
+            <h4 class="whitespace-nowrap">
+              Исходная точка (x<sub>1</sub>, x<sub>2</sub>)
+            </h4>
+            <div class="col-span-3 grid w-max grid-cols-[1fr_1fr] items-center gap-4 2xl:col-span-1">
+              <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
+                <Label for="x1" class="text-base">x<sub>1</sub></Label>
+                <Input id="x1" v-model="x0.x1" type="number" step="0.1" class="w-20" name="" />
+              </fieldset>
+              <fieldset class="grid grid-cols-[max-content_1fr] items-center gap-2">
+                <Label for="x2" class="text-base">x<sub>2</sub></Label>
+                <Input id="x2" v-model="x0.x2" type="number" step="0.1" class="w-20" name="" />
+              </fieldset>
+            </div>
+          </div>
+
+          <div class="">
+            <Label for="count-steps" class="whitespace-nowrap text-base">Исходный шаг сходимости l</Label>
+            <Input
+              id="count-steps"
+              v-model.number="l"
+              :placeholder="l"
+              type="number"
+              min="0.001"
+              step="0.1"
+              max="100"
             />
           </div>
 

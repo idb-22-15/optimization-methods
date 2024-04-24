@@ -13,6 +13,7 @@ export function useMethodParams(method: Ref<string>) {
   const epsilon1 = ref(0.15)
   const epsilon2 = ref(0.2)
   const M = ref(10)
+  const l = ref(0.5)
 
   function setExerciseVariant(variant: ExerciseVariant) {
     fString.value = variant.f
@@ -31,7 +32,7 @@ export function useMethodParams(method: Ref<string>) {
 
     switch (method.value) {
       case Method.gradientDescentWithConstantStep:
-        return gradientDescentWithConstantStep(fString.value, x0.value, epsilon1.value, epsilon2.value, M.value)
+        return gradientDescentWithConstantStep(fString.value, x0.value, epsilon1.value, epsilon2.value, M.value, l.value)
       default: throw new Error('no method')
     }
   })
@@ -45,6 +46,7 @@ export function useMethodParams(method: Ref<string>) {
     epsilon1,
     epsilon2,
     M,
+    l,
     setExerciseVariant,
     result,
   }
