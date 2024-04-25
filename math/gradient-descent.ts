@@ -46,14 +46,14 @@ export function gradientDescentWithConstantStep(
 
   for (let k = 0, xk = x0; ; k++) {
     const fx = f(xk)
-    logger.log(`k: ${k}`)
-    logger.log(`x^${k}: (${xk.x1}, ${xk.x2}), f(x^${k}) = ${fx}`)
+    logger.log(`k = ${k}`)
+    logger.log(`x^${k} = (${xk.x1}, ${xk.x2}), f(x^${k}) = ${fx}`)
     // step 3
     const gradfx = getGradient(fString, xk)!
-    logger.log(`grad f: (${gradfx.x1}; ${gradfx.x2})`)
+    logger.log(`grad(f(x^${k})) = (${gradfx.x1}; ${gradfx.x2})`)
 
     const norm = getNorm(gradfx)
-    logger.log(`norm = ${norm}`)
+    logger.log(`norm(grad(f(x^${k}))) = ${norm}`)
 
     // steps 4, 5
     if (norm < epsilon1 || k === M) {
@@ -62,7 +62,7 @@ export function gradientDescentWithConstantStep(
         fx: f(xk)!,
         step: k,
       }
-      logger.log(`Ответ: шаг: ${answer.step}, x: (${answer.x.x1}, ${answer.x.x2}), f(x) = ${answer.fx}`)
+      logger.log(`Ответ: k = ${answer.step}, x = (${answer.x.x1}, ${answer.x.x2}), f(x) = ${answer.fx}`)
       return {
         stepsData,
         answer,
@@ -83,7 +83,7 @@ export function gradientDescentWithConstantStep(
       }
       fxkPlus1 = f(xkPlus1)
       fdiff = f(xkPlus1) - f(xk)
-      logger.log(`t: ${tk}`)
+      logger.log(`t^${k} = ${tk}`)
       logger.log(`x^${k + 1}: (${xkPlus1.x1}: ${xkPlus1.x2}), f(x^${k + 1}) = ${fxkPlus1}`)
       tk = tk / 2
 
@@ -123,7 +123,7 @@ export function gradientDescentWithConstantStep(
         step: k + 1,
       }
 
-      logger.log(`Ответ: k = ${answer.step}, x: (${answer.x.x1}, ${answer.x.x2}), fx = ${answer.fx}`)
+      logger.log(`Ответ: k = ${answer.step}, x = (${answer.x.x1}, ${answer.x.x2}), f(x^${answer.step}) = ${answer.fx}`)
       return {
         stepsData,
         answer,

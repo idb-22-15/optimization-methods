@@ -148,7 +148,7 @@ const data = computed<Plotly.Data[] >(() => {
       y: ys.value,
       z: zs.value,
       type: 'surface',
-      opacity: 0.5,
+      opacity: 0.2,
     },
     ...resultPlot.value,
   ]
