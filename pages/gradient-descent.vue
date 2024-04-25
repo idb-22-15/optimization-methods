@@ -32,6 +32,9 @@ const { width: resizablePlotWidth } = useElementSize(resizablePlotRef, { width: 
 const methods: MethodData[] = [{
   method: Method.gradientDescentWithConstantStep,
   title: 'Метод градиентного спуска с постоянный шагом',
+}, {
+  method: Method.gradientDescentFastest,
+  title: 'Метод наискорейшего градиентного спуска',
 }]
 
 const selectedMethod = ref(methods[0].method)
@@ -203,7 +206,7 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
 
 <template>
   <main class="container">
-    <ResizablePanelGroup direction="horizontal" class="overflow-visible">
+    <ResizablePanelGroup direction="horizontal" class="[overflow:visible_!important]">
       <ResizablePanel ref="resizablePlotRef" as-child :min-size="30">
         <ClientOnly>
           <PlotFigure3d :data="data" :layout="layout" :config="config" />
@@ -212,18 +215,16 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
       <ResizableHandle />
       <ResizablePanel :min-size="40" class="ml-4 flex flex-col gap-4 [overflow:visible_!important]" as-child>
         <section class="grid h-max grid-cols-2 items-center gap-x-8 gap-y-4">
-          <div class="flex gap-4">
-            <SelectMethod v-model="selectedMethod" :methods="methods" />
-            <SelectVariant
-              class="w-fit 2xl:justify-self-end"
-              :headers="variantsHeaders"
-              :variants="variants"
-              @select:variant="(variant) => {
-                setExerciseVariant(variant)
-                selectedStep = 'answer'
-              }"
-            />
-          </div>
+          <SelectMethod v-model="selectedMethod" :methods="methods" />
+          <SelectVariant
+            class="w-fit 2xl:justify-self-end"
+            :headers="variantsHeaders"
+            :variants="variants"
+            @select:variant="(variant) => {
+              setExerciseVariant(variant)
+              selectedStep = 'answer'
+            }"
+          />
           <div class="col-start-1 col-end-3">
             <Label class="whitespace-nowrap text-base" for="function">Функция f(x₁, x₂)</Label>
             <Input
@@ -253,16 +254,18 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
           </div>
 
           <div class="">
-            <Label for="count-steps" class="whitespace-nowrap text-base">Исходный шаг сходимости l</Label>
-            <Input
-              id="count-steps"
-              v-model.number="l"
-              :placeholder="l"
-              type="number"
-              min="0.001"
-              step="0.1"
-              max="100"
-            />
+            <template v-if="selectedMethod === Method.gradientDescentWithConstantStep">
+              <Label for="count-steps" class="whitespace-nowrap text-base">Исходный шаг сходимости l</Label>
+              <Input
+                id="count-steps"
+                v-model.number="l"
+                :placeholder="l"
+                type="number"
+                min="0.001"
+                step="0.1"
+                max="100"
+              />
+            </template>
           </div>
 
           <div class="">

@@ -223,8 +223,13 @@ useSeoMeta({
       <section class="grid h-max grid-cols-[repeat(2,max-content_1fr)] items-center gap-x-8 gap-y-4 2xl:grid-cols-[max-content,1fr]">
         <SelectMethod
           v-model="selectedMethod" :methods="methods"
-          tab-class="col-span-4 "
-          select-class="2xl:-order-1 2xl:[grid-area:1/1/2/3]"
+          class="col-start-1 col-end-3"
+        />
+        <SelectVariant
+          class="col-start-3 col-end-5 w-fit"
+          :headers="variantsHeaders"
+          :variants="variants"
+          @select:variant="setExerciseVariant"
         />
 
         <Label class="whitespace-nowrap text-base" for="function">Функция f(x)</Label>
@@ -236,12 +241,7 @@ useSeoMeta({
           placeholder="x^2 + 1"
           @change="fString = ($event.target as HTMLInputElement).value"
         />
-        <SelectVariant
-          class="col-span-2 w-fit 2xl:-order-1 2xl:justify-self-end 2xl:[grid-area:1/1/2/3]"
-          :headers="variantsHeaders"
-          :variants="variants"
-          @select:variant="setExerciseVariant"
-        />
+
         <h4 class="whitespace-nowrap">
           Интервал L<sub>0</sub>
         </h4>

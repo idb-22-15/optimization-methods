@@ -1,4 +1,4 @@
-import { Method, gradientDescentWithConstantStep } from '~/math/gradient-descent'
+import { Method, gradientDescentFastest, gradientDescentWithConstantStep } from '~/math/gradient-descent'
 import { type Interval, type Vec2, isValidFunction } from '~/math/core'
 import { type ExerciseVariant, variants } from '~/math/variants/gradient-descent-variants'
 
@@ -27,12 +27,14 @@ export function useMethodParams(method: Ref<string>) {
   }
 
   const result = computed(() => {
-    if (!f.value || !isValidFunction(f.value, { x1: 1, x2: 1 }))
+    if (!f.value || !isValidFunction(f.value, { x1: x0.value.x1, x2: x0.value.x2 }))
       return null
 
     switch (method.value) {
       case Method.gradientDescentWithConstantStep:
         return gradientDescentWithConstantStep(fString.value, x0.value, epsilon1.value, epsilon2.value, M.value, l.value)
+      case Method.gradientDescentFastest:
+        return gradientDescentFastest(fString.value, x0.value, epsilon1.value, epsilon2.value, M.value)
       default: throw new Error('no method')
     }
   })
