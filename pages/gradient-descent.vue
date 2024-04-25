@@ -80,6 +80,7 @@ const startDot = computed(() => {
     z: [f.value(x0.value)],
     type: 'scatter3d',
     marker: {
+      size: 7,
       color: 'black',
     },
   } satisfies Plotly.Data
@@ -125,12 +126,17 @@ const resultPlot = computed(() => {
     z: [result.value.answer.fx],
     type: 'scatter3d',
     marker: {
+      size: 7,
       color: 'red',
     },
   } satisfies Plotly.Data
 
-  if (selectedStep.value === 'answer')
+  if (selectedStep.value === 'answer') {
     resultPlot.push(answerDot)
+    stepsPlot.x.push(result.value.answer.x.x1)
+    stepsPlot.y.push(result.value.answer.x.x2)
+    stepsPlot.z.push(result.value.answer.fx)
+  }
 
   return resultPlot
 })
@@ -331,25 +337,6 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
             <Table class="overflow-x-scroll">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Старт</TableHead>
-                  <TableHead>x<sub>0</sub></TableHead>
-                  <TableHead>f(x)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow
-                  class="cursor-pointer"
-                  @click="selectStep('initial')"
-                >
-                  <TableCell><RadioGroupItem value="initial" /></TableCell>
-                  <TableCell>[{{ x0.x1 }}, {{ x0.x2 }}]</TableCell>
-                  <TableHead> {{ f?.(x0) }} </TableHead>
-                </TableRow>
-              </TableBody>
-            </Table>
-            <Table class="overflow-x-scroll">
-              <TableHeader>
-                <TableRow>
                   <TableHead>Шаг k</TableHead>
                   <TableHead>x<sub>k</sub></TableHead>
                   <TableHead>f(x<sub>k</sub>)</TableHead>
@@ -385,7 +372,10 @@ const variantsHeaders: SelectVariantHeader<ExerciseVariantKey>[] = [
                   class="cursor-pointer"
                   @click="selectStep('answer')"
                 >
-                  <TableCell><RadioGroupItem value="answer" /></TableCell>
+                  <TableCell class="space-x-4">
+                    <RadioGroupItem id="answer" value="answer" />
+                    <Label for="answer">{{ result.answer.step }}</Label>
+                  </TableCell>
                   <TableCell>[{{ result.answer.x.x1 }}, {{ result.answer.x.x2 }}]</TableCell>
                   <TableCell>{{ result.answer.fx }}</TableCell>
                 </TableRow>
