@@ -59,9 +59,9 @@ const zs = computed(() => {
   if (!f.value)
     return []
 
-  for (const x of xs.value) {
+  for (const y of ys.value) {
     const layer = []
-    for (const y of ys.value) {
+    for (const x of xs.value) {
       const z = f.value({ x1: x, x2: y })!
       layer.push(z)
     }
@@ -128,7 +128,9 @@ const resultPlot = computed(() => {
       color: 'red',
     },
   } satisfies Plotly.Data
-  resultPlot.push(answerDot)
+
+  if (selectedStep.value === 'answer')
+    resultPlot.push(answerDot)
 
   return resultPlot
 })
