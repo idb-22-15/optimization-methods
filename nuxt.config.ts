@@ -2,8 +2,8 @@ import '@total-typescript/ts-reset'
 
 export default defineNuxtConfig({
   ssr: true,
-  css: ['~/assets/index.css'],
   devtools: { enabled: true },
+  
   app: {
     head: {
       link: [
@@ -12,24 +12,26 @@ export default defineNuxtConfig({
     },
   },
   modules: [
-    '@nuxtjs/google-fonts',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/seo',
     '@nuxt/eslint',
+    '@nuxt/fonts',
     'shadcn-nuxt',
   ],
+
+  // style
+  css: ['~/assets/index.css'],
   shadcn: {
     prefix: '',
     componentDir: './components/ui',
   },
-  // eslintConfig: {
-  //   setup: false,
-  // },
-  googleFonts: {
-    families: {
-      'JetBrains Mono': true,
-    },
+  fonts: {
+    families: [{
+      name: 'JetBrains Mono',
+    }],
   },
+
+  // imports
   imports: {
     autoImport: true,
     dirs: [],
@@ -37,9 +39,15 @@ export default defineNuxtConfig({
   components: {
     dirs: [],
   },
+
   site: {
     name: 'Методы оптимизации онлайн. Найти минимум функции',
-    url: 'http://optimization-methods.biplane-design.com',
-
+    url: 'https://optimization-methods.artistick.tech',
   },
+  runtimeConfig: {
+    public: {
+      posthogPublicKey: 'phc_cqwkS30Ryuk6jRZm0QLsO6dh0ExR5DeaDVL1KU10hOI',
+      posthogHost: "https://eu.i.posthog.com"
+    }
+  }
 })
