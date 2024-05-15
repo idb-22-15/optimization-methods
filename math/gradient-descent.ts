@@ -56,7 +56,7 @@ export function gradientDescentWithConstantStep(
     logger.log(`norm(grad(f(x^${k}))) = ${norm}`)
 
     // steps 4, 5
-    if (norm < epsilon1 || k === M) {
+    if (norm < epsilon1 || k >= M) {
       const answer: AnswerData = {
         x: xk,
         fx: f(xk)!,
@@ -157,7 +157,7 @@ export function gradientDescentFastest(
     logger.log(`norm(grad(f(x^${k}))) = ${norm}`)
 
     // steps 4, 5
-    if (norm < epsilon1 || k === M) {
+    if (norm < epsilon1 || k >= M) {
       const answer: AnswerData = {
         x: xk,
         fx: fxk,
