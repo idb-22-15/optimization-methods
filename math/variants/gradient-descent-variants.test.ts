@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
+import { getFunction } from '../core'
 import { variants } from './gradient-descent-variants'
-import { getFunction } from '~/math/core'
 
 test('gradient descent variants are correct', () => {
   for (const v of variants) {

@@ -1,6 +1,6 @@
 import { type EvalFunction, type MathNode, compile, derivative, parse, string } from 'mathjs/number'
 
-export type Fx = (x: number) => number
+export type Fx<T extends number | Vec2> = (x: T) => number
 
 export interface Interval<T> {
   start: T

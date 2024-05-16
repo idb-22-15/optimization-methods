@@ -1,4 +1,4 @@
-import { type Fx, type ValidFunctionWithScope, type Vec2, getFunction, getFunctionDerivative, getGradient } from './core'
+import { type ValidFunctionWithScope, type Vec2, getFunction, getFunctionDerivative, getGradient } from './core'
 import { logger } from '~/utils/logger'
 
 export enum Method {
@@ -190,7 +190,7 @@ export function gradientDescentFastest(
     const fdiff = fxkPlus1 - fxk
 
     logger.log(`t^${k} = ${tk}`)
-    logger.log(`x^${k + 1}: (${xkPlus1.x1}: ${xkPlus1.x2}), f(x^${k + 1}) = ${fxkPlus1}`)
+    logger.log(`x^${k + 1} = (${xkPlus1.x1}, ${xkPlus1.x2}), f(x^${k + 1}) = ${fxkPlus1}`)
 
     // step 8
     const diff: Vec2 = {

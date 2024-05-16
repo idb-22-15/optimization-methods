@@ -1,8 +1,6 @@
 import { fib } from '../utils/fibonacci'
 import { logger } from '../utils/logger'
-import type { Interval } from './core'
-
-export type Fx = (x: number) => number
+import type { Fx, Interval } from './core'
 
 export enum Method {
   halfDivision = 'halfDivision',
@@ -57,7 +55,7 @@ export interface AnswerData extends Interval<Dot> {
   step: number
 }
 
-export function halfDivisionMethod(f: Fx, L0: InitialXRange, epsilon: number) {
+export function halfDivisionMethod(f: Fx<number>, L0: InitialXRange, epsilon: number) {
   logger.log(`halfDivisionMethod`)
   const stepsData: HalfDivisionStepData[] = []
   // step 1
@@ -155,7 +153,7 @@ export function halfDivisionMethod(f: Fx, L0: InitialXRange, epsilon: number) {
   }
 }
 
-export function goldenRatioDivisionMethod(f: Fx, L0: InitialXRange, epsilon: number) {
+export function goldenRatioDivisionMethod(f: Fx<number>, L0: InitialXRange, epsilon: number) {
   logger.log(`goldenRatioDivisionMethod`)
   const stepsData: GoldenRatioDivisionStepData[] = []
 
@@ -244,7 +242,7 @@ export function goldenRatioDivisionMethod(f: Fx, L0: InitialXRange, epsilon: num
   }
 }
 
-export function fibonacciDivisionMethod2(f: Fx, interval: InitialXRange, epsilon: number) {
+export function fibonacciDivisionMethod2(f: Fx<number>, interval: InitialXRange, epsilon: number) {
   logger.log(`fibonacciDivisionMethod`)
   const stepsData: FibonacciDivisionStepData[] = []
   // step 1
@@ -431,7 +429,7 @@ export function fibonacciDivisionMethod2(f: Fx, interval: InitialXRange, epsilon
   }
 }
 
-export function fibonacciDivisionMethod(f: Fx, interval: InitialXRange, epsilon: number) {
+export function fibonacciDivisionMethod(f: Fx<number>, interval: InitialXRange, epsilon: number) {
   logger.log(`fibonacciDivisionMethod`)
   const stepsData: FibonacciDivisionStepData[] = []
 

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
+import { getFunction } from '../core'
 import { variants } from './one-dimensional-optimization-variants'
-import { getFunction } from '~/math/core'
 
 test('one dimensional optimization variants are correct', () => {
   for (const v of variants) {

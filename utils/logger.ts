@@ -1,4 +1,3 @@
-export const logger = {
-  // eslint-disable-next-line no-console
-  log: console.log,
-}
+import { createConsola } from 'consola'
+
+export const logger = createConsola()
