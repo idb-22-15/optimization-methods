@@ -52,10 +52,10 @@ const {
   result,
 } = useMethodParams(selectedMethod)
 
-const dots = 50
+const DOTS = 50
 
-const xs = useSequence(x1Interval, dots)
-const ys = useSequence(x2Interval, dots)
+const xs = useSequence(x1Interval, DOTS)
+const ys = useSequence(x2Interval, DOTS)
 
 const zs = computed(() => {
   const layers: number[][] = []

@@ -1,7 +1,11 @@
 import { logger } from '../utils/logger'
 import type { Fx, Vec2 } from './core'
 
-const f = (x: Vec2) => x.x1 ** 2 + 0.6 * x.x1 * x.x2 + 6 * x.x2 ** 2
+export enum Method {
+  newton = 'newton',
+}
+
+const getF = (a: number, b: number, c: number) => (x: Vec2) => a * x.x1 ** 2 + b * x.x1 * x.x2 + c * x.x2 ** 2
 const x0: Vec2 = {
   x1: 1.5,
   x2: 0.5,
@@ -10,13 +14,30 @@ const epsilon1 = 0.15
 const epsilon2 = 0.2
 const M = 10
 
-function gradFx(x: Vec2) {
-  const df_dx_1 = 2 * x.x1 + 0.6 * x.x2
-  const df_dx_2 = 0.6 * x.x1 + 12 * x.x2
+// const a = 1
+// const b = 0.6
+// const c = 6
+logger.log('f(x) = a*x1 + b*x1*x2 + c*x3')
+const a = Number(await logger.prompt('Введите a', {
+  type: 'text',
+}))
 
-  return {
-    x1: df_dx_1,
-    x2: df_dx_2,
+const b = Number(await logger.prompt('Введите b', {
+  type: 'text',
+}))
+
+const c = Number(await logger.prompt('Введите c', {
+  type: 'text',
+}))
+
+function getGradf(a: number, b: number, c: number) {
+  return (x: Vec2) => {
+    const df_dx_1 = a * 2 * x.x1 + b * x.x2
+    const df_dx_2 = b * x.x1 + 2 * c * x.x2
+    return {
+      x1: df_dx_1,
+      x2: df_dx_2,
+    }
   }
 }
 
@@ -73,7 +94,7 @@ function getNorm(x: Vec2) {
   return Math.sqrt(x.x1 ** 2 + x.x2 ** 2)
 }
 
-interface StepData {
+export interface StepData {
   x: Vec2
   fx: number
   gradfx: Vec2
@@ -83,7 +104,7 @@ interface StepData {
   lastCondition: boolean
 }
 
-interface AnswerData {
+export interface AnswerData {
   x: Vec2
   fx: number
   step: number
@@ -117,15 +138,15 @@ export function newtonMethod(f: Fx<Vec2>, gradf: (x: Vec2) => Vec2, x0: Vec2, ep
     // step 4 a
       logger.ready(`Шаг 4a^${k}`)
 
-      const ans: AnswerData = {
+      const answer: AnswerData = {
         x,
         fx,
         step: k,
       }
-      logger.box(`Ответ: k = ${k}, x = (${x.x1}, ${x.x2}), f(x^${k}) = ${f(x)}`)
+      logger.box(`Ответ: k = ${k}, x* = (${x.x1}, ${x.x2}), f(x*) = ${f(x)}`)
       return {
         stepsData,
-        ans,
+        answer,
       }
     }
     else {
@@ -137,15 +158,15 @@ export function newtonMethod(f: Fx<Vec2>, gradf: (x: Vec2) => Vec2, x0: Vec2, ep
       if (k >= M) {
         // step 5 a
         logger.ready(`Шаг 5a^${k}`)
-        const ans: AnswerData = {
+        const answer: AnswerData = {
           x,
           fx,
           step: k,
         }
-        logger.box(`Ответ: k = ${k}, x = (${x.x1}, ${x.x2}), f(x^${k}) = ${f(x)}`)
+        logger.box(`Ответ: k = ${k}, x* = (${x.x1}, ${x.x2}), f(x*) = ${f(x)}`)
         return {
           stepsData,
-          ans,
+          answer,
         }
       }
       else {
@@ -157,26 +178,29 @@ export function newtonMethod(f: Fx<Vec2>, gradf: (x: Vec2) => Vec2, x0: Vec2, ep
         const hessian = getHessianMatrix(x)
         // step 7
         // logger.ready(`Шаг 7^${k}`)
-
+        logger.log(`H = [${hessian[0][0]}, ${hessian[0][0]}]`)
+        logger.log(`    [${hessian[1][0]}, ${hessian[1][1]}]`)
         const hessianInversed = getInversed(hessian)
+        logger.log(`H^-1 = [${hessianInversed[0][0]}, ${hessianInversed[0][0]}]`)
+        logger.log(`       [${hessianInversed[1][0]}, ${hessianInversed[1][1]}]`)
         // step 8
         // logger.ready(`Шаг 8^${k}`)
 
         let d: Vec2 = null!
         let t: number = null!
         const detHessianInversed = getDet(hessianInversed)
-        logger.log(`|H|^-1 = ${detHessianInversed}`)
+        logger.log(`det(|H|^-1) = ${detHessianInversed}`)
 
-        if (detHessianInversed > 0) {
+        if (hessianInversed[0][0] > 0 && detHessianInversed > 0) {
           // step 8 a
           // step 9
+          logger.log(`det(|H|^-1) = ${detHessianInversed} > 0`)
           logger.ready(`Шаг 8a^${k}`)
           logger.ready(`Шаг 9^${k}`)
 
-          logger.log(`|H|^-1 = ${detHessianInversed} > 0`)
           d = {
-            x1: -detHessianInversed * gradfx.x1,
-            x2: -detHessianInversed * gradfx.x2,
+            x1: -(hessianInversed[0][0] * gradfx.x1 + hessianInversed[0][1] * gradfx.x2),
+            x2: -(hessianInversed[1][0] * gradfx.x1 + hessianInversed[1][1] * gradfx.x2),
           }
           t = 1
           logger.log(`d^${k} = (${d.x1}, ${d.x2}), t^${k} = ${t}`)
@@ -244,16 +268,16 @@ export function newtonMethod(f: Fx<Vec2>, gradf: (x: Vec2) => Vec2, x0: Vec2, ep
           logger.log(`Условие выполняется для k = ${k} и k = ${k - 1}`)
           logger.ready(`Шаг 11a^${k}`)
           x = xNext
-          const ans: AnswerData = {
+          const answer: AnswerData = {
             x,
             fx: f(x),
             step: k,
           }
-          logger.box(`Ответ: k = ${k}, x^${k} = (${x.x1}, ${x.x2}), f(x^${k}) = ${f(x)}`)
+          logger.box(`Ответ: k = ${k}, x* = (${x.x1}, ${x.x2}), f(x*) = ${f(x)}`)
 
           return {
             stepsData,
-            ans,
+            answer,
           }
         }
         else {
@@ -267,5 +291,4 @@ export function newtonMethod(f: Fx<Vec2>, gradf: (x: Vec2) => Vec2, x0: Vec2, ep
     }
   }
 }
-
-newtonMethod(f, gradFx, x0, epsilon1, epsilon2, M)
+newtonMethod(getF(a, b, c), getGradf(a, b, c), x0, epsilon1, epsilon2, M)

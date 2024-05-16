@@ -2,8 +2,8 @@ import '@total-typescript/ts-reset'
 
 export default defineNuxtConfig({
   ssr: true,
-  devtools: { enabled: true },
-  
+  devtools: { enabled: false },
+
   app: {
     head: {
       link: [
@@ -44,10 +44,4 @@ export default defineNuxtConfig({
     name: 'Методы оптимизации онлайн. Найти минимум функции',
     url: 'https://optimization-methods.artistick.tech',
   },
-  runtimeConfig: {
-    public: {
-      posthogPublicKey: 'phc_cqwkS30Ryuk6jRZm0QLsO6dh0ExR5DeaDVL1KU10hOI',
-      posthogHost: "https://eu.i.posthog.com"
-    }
-  }
 })

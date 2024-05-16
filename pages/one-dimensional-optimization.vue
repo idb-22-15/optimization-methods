@@ -43,7 +43,7 @@ import { useMethodParams } from '~/composables/one-dimensional-optimization'
 import SelectMethod, { type MethodData } from '~/components/SelectMethod.vue'
 import type { Interval } from '~/math/core'
 
-defineOgImageComponent('Frame', {})
+// defineOgImageComponent('Frame', {})
 
 const methods: MethodData[] = [
   {
