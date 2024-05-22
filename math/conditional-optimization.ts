@@ -61,17 +61,22 @@ export interface AnswerData {
   step: number
 }
 
-export function penalty(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: number, epsilon: number) {
+export function penalty(fp: FParams, gp: FParams, r0: number, C: number, epsilon: number) {
   // step 1
   const f = getF(fp)
   const g = getG(gp)
   logger.ready('Шаг 1')
+  const x0x1 = 0
+  const x0x2 = -gp.c - gp.a * x0x1
+  const x0: Vec2 = { x1: x0x1, x2: x0x2 }
+  logger.log(`x0_2 = ${-gp.c} + (${-gp.a * x0x1})`)
   logger.log(`x0 = (${x0.x1}, ${x0.x2}), r0 = ${r0}, C = ${C}, Ɛ = ${epsilon}`)
   const fString = `(${fp.a}*x1^2) + (${fp.b}*x2^2) + (${fp.c})`
   const gString = `(${gp.a}*x1) + (${gp.b}*x2) + (${gp.c})`
   logger.log(`f(x) = ${fString}`)
   logger.log(`g(x) = ${gString} = 0`)
   logger.log(`k = 0`)
+  logger.log(`f(x^0) = ${f(x0)} `)
   let k = 0
   let x = x0
   let r = r0
@@ -94,11 +99,10 @@ export function penalty(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: numbe
     logger.log(`F(x, r^${k}) = f(x) + P(x, r^${k}) = ${FString}`)
 
     // step 3
-
     logger.ready(`Шаг 3^${k}`)
-    logger.warn('Решаем Методом наискорейшего градиентного спуска')
+    logger.info('Решаем Методом Ньютона')
     const res = newtonMethod(fp, gp, r, x, epsilon, epsilon, 10)
-    logger.warn('Решили')
+    logger.info('Решили')
 
     const Fx = res.answer.fx
     const xAns = res.answer.x
@@ -123,15 +127,19 @@ export function penalty(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: numbe
       k++
       logger.log(`k = ${k}`)
       logger.log(`r^${k} = ${r}`)
-      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2})`)
+      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2}), f(x^${k}) = ${f(x)})`)
     }
   }
 }
 
-penalty(fp, gp, { x1: 0, x2: -1 }, r0, C, epsilon)
+// penalty(fp, gp, r0, C, epsilon)
+barrier(fp, gp, r0, C, epsilon)
 
-export function barrier(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: number, epsilon: number) {
+export function barrier(fp: FParams, gp: FParams, r0: number, C: number, epsilon: number) {
   // step 1
+  const x0x1 = 0
+  const x0x2 = -gp.c - gp.a * x0x1
+  const x0: Vec2 = { x1: x0x1, x2: x0x2 }
   const f = getF(fp)
   const g = getG(gp)
   const fString = `(${fp.a}*x1^2) + (${fp.b}*x2^2) + (${fp.c})`
@@ -141,6 +149,7 @@ export function barrier(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: numbe
   logger.log(`f(x) = ${fString}`)
   logger.log(`g(x) = ${gString} = 0`)
   logger.log(`k = 0`)
+  logger.log(`f(x^0) = ${f(x0)} `)
   let k = 0
   let x = x0
   let r = r0
@@ -148,7 +157,7 @@ export function barrier(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: numbe
   // step 2
     logger.ready(`Шаг 2^${k}`)
     const P = (x: Vec2, r: number) => -r * 1 / g(x)
-    const F = (x: Vec2, r: number) => f(x) + P(x, r)
+    // const F = (x: Vec2, r: number) => f(x) + P(x, r)
     // const PString = `-${r} * 1 / (${gString})`
     // const FString = `${fString} ${PString}`
     logger.log(`P(x, r^${k}) = -${r} * 1 / g(x)`)
@@ -156,9 +165,9 @@ export function barrier(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: numbe
 
     // step 3
     logger.ready(`Шаг 3^${k}`)
-    logger.warn('Решаем Методом наискорейшего градиентного спуска')
+    logger.info('Решаем Методом Ньютона')
     const res = newtonMethod(fp, gp, r, x, epsilon, epsilon, 10)
-    logger.warn('Решили')
+    logger.info('Решили')
     const Fx = res.answer.fx
     const xAns = res.answer.x
     const Px = P(xAns, r)
@@ -181,7 +190,7 @@ export function barrier(fp: FParams, gp: FParams, x0: Vec2, r0: number, C: numbe
       k++
       logger.log(`k = ${k}`)
       logger.log(`r^${k} = ${r}`)
-      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2})`)
+      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2}), f(x^${k}) = ${f(x)})`)
     }
   }
 }
