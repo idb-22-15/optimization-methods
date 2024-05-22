@@ -1,5 +1,5 @@
+import { logger } from '../utils/logger'
 import { type ValidFunctionWithScope, type Vec2, getFunction, getFunctionDerivative, getGradient } from './core'
-import { logger } from '~/utils/logger'
 
 export enum Method {
   gradientDescentWithConstantStep = 'gradientDescentWithConstantStep',

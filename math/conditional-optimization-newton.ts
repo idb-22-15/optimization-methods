@@ -2,58 +2,37 @@ import { logger } from '../utils/logger'
 import type { FParams } from './conditional-optimization'
 import type { Fx, Vec2 } from './core'
 
-export enum Method {
-  newton = 'newton',
-}
-
-const getF = (a: number, b: number, c: number) => (x: Vec2) => a * x.x1 ** 2 + b * x.x1 * x.x2 + c * x.x2 ** 2
-const x0: Vec2 = {
-  x1: 1.5,
-  x2: 0.5,
-}
-const epsilon1 = 0.15
-const epsilon2 = 0.2
-const M = 10
+// const x0: Vec2 = {
+//   x1: 1.5,
+//   x2: 0.5,
+// }
+// const epsilon1 = 0.15
+// const epsilon2 = 0.2
+// const M = 10
 
 // const a = 1
 // const b = 0.6
 // const c = 6
-logger.log('f(x) = a*x1 + b*x1*x2 + c*x3')
-const a = Number(await logger.prompt('Введите a', {
-  type: 'text',
-}))
+// logger.log('f(x) = a*x1^2 + b*x1*x2 + c*x2^2')
+// const a = Number(await logger.prompt('Введите a', {
+//   type: 'text',
+// }))
 
-const b = Number(await logger.prompt('Введите b', {
-  type: 'text',
-}))
+// const b = Number(await logger.prompt('Введите b', {
+//   type: 'text',
+// }))
 
-const c = Number(await logger.prompt('Введите c', {
-  type: 'text',
-}))
+// const c = Number(await logger.prompt('Введите c', {
+//   type: 'text',
+// }))
 
-function getGradf(a: number, b: number, c: number) {
-  return (x: Vec2) => {
-    const df_dx_1 = a * 2 * x.x1 + b * x.x2
-    const df_dx_2 = b * x.x1 + 2 * c * x.x2
-    return {
-      x1: df_dx_1,
-      x2: df_dx_2,
-    }
-  }
-}
+// const fp: FParams = {
+//   a,
+//   b,
+//   c,
+// }
 
 export type Matrix2 = [[number, number], [number, number]]
-
-export function getHessianMatrix(fp: FParams): Matrix2 {
-  const d2f_dx2_1 = 2 * fp.a
-  const d2f_dx1_dx2 = fp.b
-  const d2f_dx2_2 = 2 * fp.c
-
-  return [
-    [d2f_dx2_1, d2f_dx1_dx2],
-    [d2f_dx1_dx2, d2f_dx2_2],
-  ]
-}
 
 export function getDet(m: Matrix2) {
   return m[0][0] * m[1][1] - m[0][1] * m[1][0]
@@ -113,11 +92,52 @@ export interface AnswerData {
 
 const stepsData: StepData[] = []
 
-export function newtonMethod(fp: FParams, f: Fx<Vec2>, gradf: (x: Vec2) => Vec2, x0: Vec2, epsilon1: number, epsilon2: number, M: number) {
+const getF = ({ a, b, c }: FParams) => (x: Vec2) => a * x.x1 ** 2 + b * x.x2 ** 2 + c
+const getG = ({ a, b, c }: FParams) => (x: Vec2) => a * x.x1 + b * x.x2 + c
+
+function getGradf(fp: FParams, gp: FParams, r: number) {
+  return (x: Vec2) => {
+    const df_dx_1 = fp.a * 2 * x.x1 + r / 2 * 2 * (gp.a * x.x1 + gp.b * x.x2 + gp.c) * gp.a
+    const df_dx_2 = fp.b * 2 * x.x2 + r / 2 * 2 * (gp.a * x.x1 + gp.b * x.x2 + gp.c) * gp.b
+    return {
+      x1: df_dx_1,
+      x2: df_dx_2,
+    }
+  }
+}
+
+export function getHessianMatrix(fp: FParams, gp: FParams, r: number): Matrix2 {
+  const d2f_dx2_1 = 2 * fp.a + r / 2 * 2 * gp.a ** 2
+  const d2f_dx1_dx2 = r / 2 * 2 * gp.a * gp.b
+  const d2f_dx2_2 = 2 * fp.a + r / 2 * 2 * gp.b ** 2
+
+  return [
+    [d2f_dx2_1, d2f_dx1_dx2],
+    [d2f_dx1_dx2, d2f_dx2_2],
+  ]
+}
+
+export function newtonMethod(fp: FParams, gp: FParams, r: number, x0: Vec2, epsilon1: number, epsilon2: number, M: number) {
   // step 1
   logger.ready('Шаг 1')
   logger.log(`Ɛ₁ = ${epsilon1}, Ɛ₂ = ${epsilon2}, M = ${M}`)
+  logger.log(`f(x) = {${fp.a}*x1^2 + ${fp.b}*x1*x2 + ${fp.c}*x2^2} + (${r} / 2) * {(${gp.a}x1) + (${gp.b}x2) + (${gp.c})}^2`)
+
+  const _f = getF(fp)
+  const _g = getG(gp)
+
+  const _P = (x: Vec2, r: number) => {
+    const sum1 = _g(x) ** 2
+    // const gPlus = Math.max(0, g(x))
+    // const sum2 = gPlus ** 2
+    return r / 2 * (sum1)
+  }
+  const f = (x: Vec2) => _f(x) + r / 2 * _P(x, r)
+
+  const gradf = getGradf(fp, gp, r)
+
   // step 2
+
   logger.ready('Шаг 2')
   let k = 0
   let x = x0
@@ -176,7 +196,7 @@ export function newtonMethod(fp: FParams, f: Fx<Vec2>, gradf: (x: Vec2) => Vec2,
         logger.ready(`Шаг 5b^${k}`)
         logger.ready(`Шаг 6^${k}`)
 
-        const hessian = getHessianMatrix(fp)
+        const hessian = getHessianMatrix(fp, gp, r)
         // step 7
         // logger.ready(`Шаг 7^${k}`)
         logger.log(`H = [${hessian[0][0]}, ${hessian[0][0]}]`)
@@ -292,4 +312,4 @@ export function newtonMethod(fp: FParams, f: Fx<Vec2>, gradf: (x: Vec2) => Vec2,
     }
   }
 }
-// newtonMethod(getF(a, b, c), getGradf(a, b, c), x0, epsilon1, epsilon2, M)
+// newtonMethod(fp, x0, epsilon1, epsilon2, M)
