@@ -115,7 +115,7 @@ export function penalty(fp: FParams, gp: FParams, r0: number, C: number, epsilon
     // step 4a
       logger.log(`${Px} <= ${epsilon}`)
       logger.ready(`Шаг 4a^${k}`)
-      logger.box(`Ответ: k = ${k}, r^${k} = ${r}, x* = (${xAns.x1}, ${xAns.x2}), f(x*) = ${f(x)}`)
+      logger.box(`Ответ: k = ${k}, r^${k} = ${r}, x* = (${xAns.x1}, ${xAns.x2}), f(x*) = ${f(xAns)}`)
       return
     }
     else {
@@ -127,14 +127,13 @@ export function penalty(fp: FParams, gp: FParams, r0: number, C: number, epsilon
       k++
       logger.log(`k = ${k}`)
       logger.log(`r^${k} = ${r}`)
-      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2}), f(x^${k}) = ${f(x)})`)
+      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2}), f(x^${k}) = ${f(xAns)})`)
     }
   }
 }
 
 // penalty(fp, gp, r0, C, epsilon)
 barrier(fp, gp, r0, C, epsilon)
-
 export function barrier(fp: FParams, gp: FParams, r0: number, C: number, epsilon: number) {
   // step 1
   const x0x1 = 0
@@ -179,7 +178,7 @@ export function barrier(fp: FParams, gp: FParams, r0: number, C: number, epsilon
     if (Math.abs(Px) <= epsilon) {
       logger.log(`${Math.abs(Px)} <= ${epsilon}`)
       logger.ready(`Шаг 4a^${k}`)
-      logger.box(`Ответ: k = ${k}, r^${k} = ${r}, x* = (${xAns.x1}, ${xAns.x2}), f(x*) = ${f(x)}`)
+      logger.box(`Ответ: k = ${k}, r^${k} = ${r}, x* = (${xAns.x1}, ${xAns.x2}), f(x*) = ${f(xAns)}`)
       return
     }
     else {
@@ -190,7 +189,7 @@ export function barrier(fp: FParams, gp: FParams, r0: number, C: number, epsilon
       k++
       logger.log(`k = ${k}`)
       logger.log(`r^${k} = ${r}`)
-      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2}), f(x^${k}) = ${f(x)})`)
+      logger.log(`x^${k} = (${xAns.x1}, ${xAns.x2}), f(x^${k}) = ${f(xAns)})`)
     }
   }
 }
